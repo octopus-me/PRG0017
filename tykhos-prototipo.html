@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tykhos — Protótipo</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  :root {
+    --bg-dark: #0B1120;
+    --bg-card: #111827;
+    --bg-card-hover: #1a2332;
+    --bg-surface: #162032;
+    --accent: #10B981;
+    --accent-light: #34D399;
+    --accent-glow: rgba(16, 185, 129, 0.15);
+    --accent-glow-strong: rgba(16, 185, 129, 0.3);
+    --text-primary: #F1F5F9;
+    --text-secondary: #94A3B8;
+    --text-muted: #64748B;
+    --border: #1E293B;
+    --border-light: #2a3a50;
+    --danger: #EF4444;
+    --warning: #F59E0B;
+    --blue: #3B82F6;
+    --purple: #8B5CF6;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .screen { display: none; min-height: 100vh; animation: fadeIn 0.5s ease; }
+  .screen.active { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+  @keyframes checkmark { from { stroke-dashoffset: 24; } to { stroke-dashoffset: 0; } }
+  @keyframes countUp { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+  @keyframes barGrow { from { width: 0; } }
+  @keyframes barGrowH { from { height: 0; } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes drawLine { from { stroke-dashoffset: 2000; } to { stroke-dashoffset: 0; } }
+
+  /* ===== BUTTONS ===== */
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #059669);
+    color: white; border: none;
+    padding: 16px 48px; border-radius: 12px;
+    font-size: 16px; font-weight: 600;
+    cursor: pointer; transition: all 0.3s;
+    font-family: 'Inter', sans-serif;
+    position: relative; z-index: 1;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(16, 185, 129, 0.3); }
+  .btn-primary:disabled { opacity: 0.4; pointer-events: none; }
+
+  .btn-secondary {
+    background: var(--bg-surface); color: var(--text-secondary);
+    border: 1px solid var(--border); padding: 14px 32px;
+    border-radius: 12px; font-size: 15px; font-weight: 500;
+    cursor: pointer; transition: all 0.3s; font-family: 'Inter', sans-serif;
+  }
+  .btn-secondary:hover { border-color: var(--text-muted); color: var(--text-primary); }
+
+  .step-indicator { display: flex; gap: 8px; margin-bottom: 32px; }
+  .step-dot { width: 40px; height: 4px; border-radius: 2px; background: var(--border); transition: background 0.3s; }
+  .step-dot.active { background: var(--accent); }
+  .step-dot.done { background: var(--accent); opacity: 0.5; }
+
+  /* ===== WELCOME ===== */
+  .welcome-screen {
+    flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; position: relative; overflow: hidden;
+  }
+  .welcome-screen::before {
+    content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+    background: radial-gradient(ellipse at 50% 40%, rgba(16, 185, 129, 0.06) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .logo-mark {
+    width: 72px; height: 72px;
+    background: linear-gradient(135deg, var(--accent), #059669);
+    border-radius: 18px; display: flex; align-items: center; justify-content: center;
+    font-size: 32px; font-weight: 800; color: white;
+    margin-bottom: 28px; box-shadow: 0 0 40px rgba(16, 185, 129, 0.2);
+    position: relative; z-index: 1;
+  }
+  .welcome-title { font-size: 42px; font-weight: 800; letter-spacing: -1.5px; margin-bottom: 12px; position: relative; z-index: 1; }
+  .welcome-title span { color: var(--accent); }
+  .welcome-sub { font-size: 18px; color: var(--text-secondary); max-width: 460px; line-height: 1.6; margin-bottom: 40px; position: relative; z-index: 1; }
+  .welcome-features { display: flex; gap: 40px; margin-top: 60px; position: relative; z-index: 1; }
+  .welcome-feature { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .welcome-feature-icon { width: 44px; height: 44px; border-radius: 12px; background: var(--bg-surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .welcome-feature span { font-size: 13px; color: var(--text-muted); }
+
+  /* ===== PROFILE ===== */
+  .profile-screen { flex-direction: column; align-items: center; padding: 40px 20px; }
+  .profile-card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px;
+    padding: 40px; max-width: 520px; width: 100%;
+  }
+  .profile-card h2 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+  .profile-card .profile-sub { color: var(--text-secondary); font-size: 14px; margin-bottom: 32px; }
+  .form-group { margin-bottom: 20px; }
+  .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; }
+  .form-group input, .form-group select {
+    width: 100%; padding: 14px 16px; background: var(--bg-surface); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text-primary); font-size: 15px; font-family: 'Inter', sans-serif;
+    transition: border-color 0.2s; outline: none;
+  }
+  .form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+  .form-group input::placeholder { color: var(--text-muted); }
+  .form-group select { appearance: none; cursor: pointer; }
+  .form-group select option { background: var(--bg-card); color: var(--text-primary); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .profile-actions { display: flex; gap: 12px; margin-top: 32px; }
+
+  /* ===== CONNECT BANKS ===== */
+  .connect-screen { flex-direction: column; align-items: center; padding: 40px 20px; }
+  .connect-header { text-align: center; margin-bottom: 36px; }
+  .connect-header h2 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+  .connect-header p { color: var(--text-secondary); font-size: 15px; }
+  .banks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; width: 100%; max-width: 640px; }
+  .bank-card {
+    background: var(--bg-card); border: 2px solid var(--border); border-radius: 14px;
+    padding: 18px 20px; display: flex; align-items: center; gap: 16px;
+    cursor: pointer; transition: all 0.25s;
+  }
+  .bank-card:hover { background: var(--bg-card-hover); border-color: var(--border-light); }
+  .bank-card.selected { border-color: var(--accent); background: var(--accent-glow); }
+  .bank-logo { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; color: white; flex-shrink: 0; }
+  .bank-info { flex: 1; }
+  .bank-info h4 { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+  .bank-info span { font-size: 12px; color: var(--text-muted); }
+  .bank-check { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border-light); display: flex; align-items: center; justify-content: center; transition: all 0.25s; flex-shrink: 0; }
+  .bank-card.selected .bank-check { background: var(--accent); border-color: var(--accent); }
+  .connect-actions { display: flex; gap: 12px; margin-top: 32px; }
+  .connect-count { font-size: 13px; color: var(--text-muted); margin-top: 12px; }
+
+  /* ===== CONSENT ===== */
+  .consent-screen { flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; }
+  .consent-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 40px; max-width: 480px; width: 100%; text-align: center; }
+  .consent-bank-logo { width: 64px; height: 64px; border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 700; color: white; }
+  .consent-card h3 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+  .consent-card .consent-sub { color: var(--text-secondary); font-size: 14px; margin-bottom: 28px; }
+  .consent-items { text-align: left; margin-bottom: 28px; }
+  .consent-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .consent-item:last-child { border-bottom: none; }
+  .consent-icon { width: 32px; height: 32px; border-radius: 8px; background: var(--accent-glow); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .consent-footer { font-size: 12px; color: var(--text-muted); margin-top: 16px; }
+
+  /* ===== CONNECTING ===== */
+  .connecting-screen { flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; text-align: center; }
+  .connecting-spinner { width: 64px; height: 64px; border: 3px solid var(--border); border-top: 3px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 24px; }
+  .connecting-banks { display: flex; flex-direction: column; gap: 12px; margin-top: 32px; width: 100%; max-width: 360px; }
+  .connecting-bank-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bg-card); border-radius: 10px; font-size: 14px; }
+  .connecting-bank-item .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); margin-left: auto; }
+  .connecting-bank-item .status-dot.done { background: var(--accent); }
+  .connecting-bank-item .status-dot.loading { background: var(--warning); animation: pulse 1s infinite; }
+
+  /* ===== SUCCESS ===== */
+  .success-screen { flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  .success-check { width: 80px; height: 80px; border-radius: 50%; background: var(--accent-glow-strong); display: flex; align-items: center; justify-content: center; margin-bottom: 24px; }
+  .success-check svg { width: 40px; height: 40px; }
+  .success-check svg path { stroke: var(--accent); stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 24; animation: checkmark 0.6s ease forwards; }
+
+  /* ===== DASHBOARD LAYOUT ===== */
+  .dashboard-screen { flex-direction: column; }
+  .top-bar { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; border-bottom: 1px solid var(--border); background: var(--bg-card); }
+  .top-bar-left { display: flex; align-items: center; gap: 12px; }
+  .top-bar-logo { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, var(--accent), #059669); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; color: white; }
+  .top-bar-brand { font-size: 18px; font-weight: 700; }
+  .top-bar-right { display: flex; align-items: center; gap: 16px; }
+  .top-bar-notif { width: 36px; height: 36px; border-radius: 10px; background: var(--bg-surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; font-size: 16px; }
+  .notif-badge { position: absolute; top: -2px; right: -2px; width: 16px; height: 16px; border-radius: 50%; background: var(--danger); font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .top-bar-avatar { width: 36px; height: 36px; border-radius: 10px; background: var(--purple); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; }
+
+  .dash-content { display: flex; flex: 1; overflow: hidden; }
+
+  .sidebar { width: 220px; background: var(--bg-card); border-right: 1px solid var(--border); padding: 20px 12px; display: flex; flex-direction: column; gap: 4px; }
+  .sidebar-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 10px; font-size: 14px; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; }
+  .sidebar-item:hover { background: var(--bg-surface); color: var(--text-primary); }
+  .sidebar-item.active { background: var(--accent-glow); color: var(--accent); font-weight: 600; }
+  .sidebar-item .si-icon { width: 20px; text-align: center; font-size: 16px; }
+  .sidebar-section { font-size: 11px; color: var(--text-muted); padding: 16px 14px 6px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+
+  .main-area { flex: 1; padding: 28px 32px; overflow-y: auto; max-height: calc(100vh - 69px); }
+  .main-header { margin-bottom: 24px; }
+  .main-header h1 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+  .main-header p { color: var(--text-muted); font-size: 14px; }
+
+  /* Dashboard view */
+  .dash-view { display: none; animation: fadeIn 0.4s ease; }
+  .dash-view.active { display: block; }
+
+  .stat-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+  .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 22px; animation: slideUp 0.5s ease backwards; }
+  .stat-card:nth-child(2) { animation-delay: 0.1s; }
+  .stat-card:nth-child(3) { animation-delay: 0.2s; }
+  .stat-label { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .stat-value { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; animation: countUp 0.6s ease backwards; }
+  .stat-change { font-size: 12px; margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+  .stat-change.positive { color: var(--accent); }
+  .stat-change.negative { color: var(--danger); }
+  .stat-card.highlight { background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(5,150,105,0.05)); border-color: rgba(16,185,129,0.3); }
+
+  .section-title { font-size: 16px; font-weight: 600; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; }
+  .section-title .badge { font-size: 11px; background: var(--bg-surface); padding: 4px 10px; border-radius: 6px; color: var(--text-muted); font-weight: 500; }
+
+  .accounts-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+  .account-row { display: flex; align-items: center; gap: 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; animation: slideUp 0.5s ease backwards; }
+  .account-logo { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; color: white; flex-shrink: 0; }
+  .account-info { flex: 1; }
+  .account-info h4 { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+  .account-info span { font-size: 12px; color: var(--text-muted); }
+  .account-balance { text-align: right; }
+  .account-balance .amount { font-size: 16px; font-weight: 600; }
+  .account-balance .updated { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .account-bar-container { width: 80px; height: 6px; background: var(--border); border-radius: 3px; margin-left: 8px; }
+  .account-bar { height: 100%; border-radius: 3px; animation: barGrow 1s ease backwards; }
+
+  .chart-section { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .chart-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 22px; }
+  .chart-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
+
+  .chart-bars { display: flex; align-items: flex-end; gap: 6px; height: 140px; padding-top: 10px; }
+  .chart-bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .chart-bar-pair { display: flex; gap: 3px; align-items: flex-end; height: 110px; }
+  .chart-bar { width: 14px; border-radius: 4px 4px 0 0; animation: barGrowH 0.8s ease backwards; }
+  .chart-bar.income { background: var(--accent); }
+  .chart-bar.expense { background: var(--danger); opacity: 0.7; }
+  .chart-bar-label { font-size: 10px; color: var(--text-muted); }
+  .chart-legend { display: flex; gap: 16px; margin-top: 12px; }
+  .chart-legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
+  .chart-legend-dot { width: 8px; height: 8px; border-radius: 2px; }
+
+  .alerts-list { display: flex; flex-direction: column; gap: 10px; }
+  .alert-item { display: flex; align-items: flex-start; gap: 12px; padding: 14px; border-radius: 10px; background: var(--bg-surface); font-size: 13px; line-height: 1.5; }
+  .alert-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px; }
+  .alert-icon.warning { background: rgba(245,158,11,0.15); }
+  .alert-icon.danger { background: rgba(239,68,68,0.15); }
+  .alert-icon.info { background: rgba(59,130,246,0.15); }
+  .alert-item strong { font-weight: 600; }
+  .alert-time { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+  .transactions-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 22px; }
+  .tx-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .tx-row:last-child { border-bottom: none; }
+  .tx-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .tx-icon.income { background: rgba(16,185,129,0.12); }
+  .tx-icon.expense { background: rgba(239,68,68,0.12); }
+  .tx-info { flex: 1; }
+  .tx-info h4 { font-size: 13px; font-weight: 500; }
+  .tx-info span { font-size: 11px; color: var(--text-muted); }
+  .tx-amount { font-size: 14px; font-weight: 600; }
+  .tx-amount.income { color: var(--accent); }
+  .tx-amount.expense { color: var(--danger); }
+
+  /* ===== FORECAST VIEW ===== */
+  .forecast-chart-container { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 24px; }
+  .forecast-chart-container h3 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+  .forecast-chart-container .forecast-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
+  .forecast-svg { width: 100%; height: 280px; }
+
+  .forecast-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+  .forecast-stat {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 18px;
+  }
+  .forecast-stat .fs-label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+  .forecast-stat .fs-value { font-size: 22px; font-weight: 700; }
+  .forecast-stat .fs-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+  .forecast-stat.danger-stat { border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.05); }
+  .forecast-stat.danger-stat .fs-value { color: var(--danger); }
+  .forecast-stat.ok-stat { border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.05); }
+  .forecast-stat.ok-stat .fs-value { color: var(--accent); }
+
+  .forecast-scenarios { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+  .forecast-scenarios h3 { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
+  .scenario-row { display: flex; align-items: center; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .scenario-row:last-child { border-bottom: none; }
+  .scenario-badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; flex-shrink: 0; width: 80px; text-align: center; }
+  .scenario-badge.optimistic { background: rgba(16,185,129,0.15); color: var(--accent); }
+  .scenario-badge.realistic { background: rgba(59,130,246,0.15); color: var(--blue); }
+  .scenario-badge.pessimistic { background: rgba(239,68,68,0.15); color: var(--danger); }
+  .scenario-info { flex: 1; }
+  .scenario-info h4 { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+  .scenario-info span { font-size: 12px; color: var(--text-muted); }
+  .scenario-value { font-size: 16px; font-weight: 700; text-align: right; min-width: 100px; }
+
+  /* ===== PAYABLES VIEW ===== */
+  .payables-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 24px; }
+  .pay-summary-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+  .pay-summary-card .ps-label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .pay-summary-card .ps-value { font-size: 24px; font-weight: 700; }
+  .pay-summary-card .ps-count { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  .pay-summary-card.pay-card { border-left: 3px solid var(--danger); }
+  .pay-summary-card.receive-card { border-left: 3px solid var(--accent); }
+  .pay-summary-card.net-card { border-left: 3px solid var(--blue); }
+
+  .week-calendar { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 24px; }
+  .week-calendar h3 { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
+  .week-header { display: grid; grid-template-columns: 120px repeat(7, 1fr); gap: 4px; margin-bottom: 8px; }
+  .week-header-day { text-align: center; font-size: 12px; color: var(--text-muted); padding: 8px 0; }
+  .week-header-day.today { color: var(--accent); font-weight: 600; }
+  .week-row { display: grid; grid-template-columns: 120px repeat(7, 1fr); gap: 4px; margin-bottom: 4px; }
+  .week-row-label { font-size: 13px; font-weight: 500; display: flex; align-items: center; color: var(--text-secondary); }
+  .week-cell {
+    background: var(--bg-surface); border-radius: 8px; padding: 8px; min-height: 60px;
+    display: flex; flex-direction: column; gap: 4px; font-size: 11px;
+  }
+  .week-cell.has-danger { border: 1px solid rgba(239,68,68,0.3); }
+  .week-cell.today-col { background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); }
+  .week-item { padding: 3px 6px; border-radius: 4px; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .week-item.expense { background: rgba(239,68,68,0.12); color: #f87171; }
+  .week-item.income { background: rgba(16,185,129,0.12); color: var(--accent-light); }
+
+  .payables-list-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+  .payables-list-section h3 { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
+  .pay-tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+  .pay-tab {
+    padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 500;
+    cursor: pointer; background: var(--bg-surface); color: var(--text-muted);
+    border: none; font-family: 'Inter', sans-serif; transition: all 0.2s;
+  }
+  .pay-tab.active { background: var(--accent-glow); color: var(--accent); }
+
+  .pay-row {
+    display: flex; align-items: center; gap: 14px; padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .pay-row:last-child { border-bottom: none; }
+  .pay-status { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .pay-status.overdue { background: var(--danger); }
+  .pay-status.due-soon { background: var(--warning); }
+  .pay-status.upcoming { background: var(--text-muted); }
+  .pay-status.received { background: var(--accent); }
+  .pay-info { flex: 1; }
+  .pay-info h4 { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+  .pay-info span { font-size: 12px; color: var(--text-muted); }
+  .pay-amount { font-size: 15px; font-weight: 600; min-width: 100px; text-align: right; }
+  .pay-amount.expense { color: var(--danger); }
+  .pay-amount.income { color: var(--accent); }
+  .pay-due { font-size: 12px; color: var(--text-muted); min-width: 80px; text-align: right; }
+  .pay-due.overdue { color: var(--danger); font-weight: 600; }
+  .pay-due.today { color: var(--warning); font-weight: 600; }
+
+  .saldo-bar {
+    margin-top: 16px; padding: 14px 18px; border-radius: 10px;
+    background: var(--bg-surface); display: flex; align-items: center; justify-content: space-between;
+    font-size: 13px;
+  }
+  .saldo-bar .saldo-label { color: var(--text-muted); }
+  .saldo-bar .saldo-result { font-weight: 700; font-size: 15px; }
+  .saldo-bar .saldo-result.ok { color: var(--accent); }
+  .saldo-bar .saldo-result.warning { color: var(--warning); }
+  .saldo-bar .saldo-result.danger { color: var(--danger); }
+
+  /* Prototype badge */
+  .proto-badge { position: fixed; bottom: 16px; right: 16px; background: var(--bg-card); border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; font-size: 11px; color: var(--text-muted); z-index: 100; display: flex; align-items: center; gap: 6px; }
+  .proto-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+  @media (max-width: 768px) {
+    .stat-cards, .forecast-stats, .payables-summary { grid-template-columns: 1fr; }
+    .chart-section { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .main-area { padding: 20px 16px; }
+    .banks-grid { grid-template-columns: 1fr; }
+    .welcome-features { flex-direction: column; gap: 20px; }
+    .form-row { grid-template-columns: 1fr; }
+    .week-calendar { overflow-x: auto; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== SCREEN 1: WELCOME ===== -->
+<div id="screen-welcome" class="screen welcome-screen active">
+  <div class="logo-mark">T</div>
+  <h1 class="welcome-title">Bem-vindo à <span>Tykhos</span></h1>
+  <p class="welcome-sub">Todas as suas contas bancárias em um só painel.<br>Saiba hoje se vai faltar dinheiro no mês que vem.</p>
+  <button class="btn-primary" onclick="goTo('screen-profile')">Começar →</button>
+  <div class="welcome-features">
+    <div class="welcome-feature"><div class="welcome-feature-icon">🏦</div><span>Multi-banco</span></div>
+    <div class="welcome-feature"><div class="welcome-feature-icon">⚡</div><span>Tempo real</span></div>
+    <div class="welcome-feature"><div class="welcome-feature-icon">🔮</div><span>Alertas preditivos</span></div>
+    <div class="welcome-feature"><div class="welcome-feature-icon">🔒</div><span>Open Finance</span></div>
+  </div>
+</div>
+
+<!-- ===== SCREEN 2: COMPANY PROFILE ===== -->
+<div id="screen-profile" class="screen profile-screen">
+  <div class="step-indicator">
+    <div class="step-dot active"></div>
+    <div class="step-dot"></div>
+    <div class="step-dot"></div>
+    <div class="step-dot"></div>
+  </div>
+  <div class="profile-card">
+    <h2>Sobre sua empresa</h2>
+    <p class="profile-sub">Essas informações nos ajudam a personalizar seus insights financeiros.</p>
+    <div class="form-group">
+      <label>Nome da empresa</label>
+      <input type="text" id="companyName" placeholder="Ex: Bella Moda Boutique" value="Bella Moda Boutique">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Setor</label>
+        <select id="companySector">
+          <option value="">Selecione...</option>
+          <option value="varejo" selected>Varejo / Comércio</option>
+          <option value="servicos">Serviços</option>
+          <option value="alimentacao">Alimentação</option>
+          <option value="tecnologia">Tecnologia</option>
+          <option value="saude">Saúde / Bem-estar</option>
+          <option value="educacao">Educação</option>
+          <option value="industria">Indústria</option>
+          <option value="outro">Outro</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Faturamento mensal aproximado</label>
+        <select id="companyRevenue">
+          <option value="">Selecione...</option>
+          <option value="ate10k">Até R$ 10.000</option>
+          <option value="10k50k" selected>R$ 10.000 — R$ 50.000</option>
+          <option value="50k100k">R$ 50.000 — R$ 100.000</option>
+          <option value="100k500k">R$ 100.000 — R$ 500.000</option>
+          <option value="acima500k">Acima de R$ 500.000</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Quantos funcionários?</label>
+        <select id="companySize">
+          <option value="1">Só eu</option>
+          <option value="2-5" selected>2 — 5</option>
+          <option value="6-20">6 — 20</option>
+          <option value="21-50">21 — 50</option>
+          <option value="50+">Mais de 50</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Quantas contas bancárias PJ?</label>
+        <select id="companyBanks">
+          <option value="1">1 conta</option>
+          <option value="2" selected>2 contas</option>
+          <option value="3">3 contas</option>
+          <option value="4+">4 ou mais</option>
+        </select>
+      </div>
+    </div>
+    <div class="profile-actions">
+      <button class="btn-secondary" onclick="goTo('screen-welcome')">← Voltar</button>
+      <button class="btn-primary" onclick="saveProfile()">Continuar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SCREEN 3: CONNECT BANKS ===== -->
+<div id="screen-connect" class="screen connect-screen">
+  <div class="step-indicator">
+    <div class="step-dot done"></div>
+    <div class="step-dot active"></div>
+    <div class="step-dot"></div>
+    <div class="step-dot"></div>
+  </div>
+  <div class="connect-header">
+    <h2>Conecte suas contas bancárias</h2>
+    <p>Selecione os bancos que sua empresa utiliza. A conexão é feita via Open Finance — segura e regulada pelo Banco Central.</p>
+  </div>
+  <div class="banks-grid" id="banksGrid">
+    <div class="bank-card" onclick="toggleBank(this, 'itau')">
+      <div class="bank-logo" style="background: #003399;">Itaú</div>
+      <div class="bank-info"><h4>Itaú Empresas</h4><span>Conta Corrente PJ</span></div>
+      <div class="bank-check"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round"/></svg></div>
+    </div>
+    <div class="bank-card" onclick="toggleBank(this, 'nubank')">
+      <div class="bank-logo" style="background: #8A05BE;">Nu</div>
+      <div class="bank-info"><h4>Nubank PJ</h4><span>Conta Corrente PJ</span></div>
+      <div class="bank-check"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round"/></svg></div>
+    </div>
+    <div class="bank-card" onclick="toggleBank(this, 'bradesco')">
+      <div class="bank-logo" style="background: #CC092F;">B</div>
+      <div class="bank-info"><h4>Bradesco Net Empresa</h4><span>Conta Corrente PJ</span></div>
+      <div class="bank-check"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round"/></svg></div>
+    </div>
+    <div class="bank-card" onclick="toggleBank(this, 'bb')">
+      <div class="bank-logo" style="background: #FFEF00; color: #003882;">BB</div>
+      <div class="bank-info"><h4>Banco do Brasil</h4><span>Conta Corrente PJ</span></div>
+      <div class="bank-check"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round"/></svg></div>
+    </div>
+    <div class="bank-card" onclick="toggleBank(this, 'inter')">
+      <div class="bank-logo" style="background: #FF7A00;">inter</div>
+      <div class="bank-info"><h4>Inter Empresas</h4><span>Conta Digital PJ</span></div>
+      <div class="bank-check"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round"/></svg></div>
+    </div>
+    <div class="bank-card" onclick="toggleBank(this, 'caixa')">
+      <div class="bank-logo" style="background: #005CA9;">CEF</div>
+      <div class="bank-info"><h4>Caixa Econômica</h4><span>Conta Corrente PJ</span></div>
+      <div class="bank-check"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round"/></svg></div>
+    </div>
+  </div>
+  <div class="connect-count" id="connectCount">Selecione pelo menos 1 banco para continuar</div>
+  <div class="connect-actions">
+    <button class="btn-secondary" onclick="goTo('screen-profile')">← Voltar</button>
+    <button class="btn-primary" id="btnConnect" disabled onclick="startConsent()">Conectar selecionados</button>
+  </div>
+</div>
+
+<!-- ===== SCREEN 4: CONSENT ===== -->
+<div id="screen-consent" class="screen consent-screen">
+  <div class="step-indicator">
+    <div class="step-dot done"></div>
+    <div class="step-dot done"></div>
+    <div class="step-dot active"></div>
+    <div class="step-dot"></div>
+  </div>
+  <div class="consent-card">
+    <div class="consent-bank-logo" id="consentBankLogo" style="background: #003399;">Itaú</div>
+    <h3>Autorizar compartilhamento</h3>
+    <p class="consent-sub" id="consentBankName">O Itaú Empresas compartilhará seus dados com a Tykhos via Open Finance</p>
+    <div class="consent-items">
+      <div class="consent-item"><div class="consent-icon">📊</div><span>Saldos e extratos da conta</span></div>
+      <div class="consent-item"><div class="consent-icon">💳</div><span>Transações dos últimos 12 meses</span></div>
+      <div class="consent-item"><div class="consent-icon">🔄</div><span>Atualização automática diária</span></div>
+      <div class="consent-item"><div class="consent-icon">📅</div><span>Validade: 12 meses (renovável)</span></div>
+    </div>
+    <button class="btn-primary" style="width: 100%;" onclick="authorizeBank()">Autorizar e conectar</button>
+    <p class="consent-footer">Regulado pelo Banco Central do Brasil · Seus dados não são vendidos</p>
+  </div>
+</div>
+
+<!-- ===== SCREEN 5: CONNECTING ===== -->
+<div id="screen-connecting" class="screen connecting-screen">
+  <div class="step-indicator">
+    <div class="step-dot done"></div>
+    <div class="step-dot done"></div>
+    <div class="step-dot done"></div>
+    <div class="step-dot active"></div>
+  </div>
+  <div class="connecting-spinner"></div>
+  <h2 style="font-size: 22px; margin-bottom: 8px;">Conectando suas contas...</h2>
+  <p style="color: var(--text-secondary); font-size: 14px;">Importando saldos e transações via Open Finance</p>
+  <div class="connecting-banks" id="connectingBanks"></div>
+</div>
+
+<!-- ===== SCREEN 6: SUCCESS ===== -->
+<div id="screen-success" class="screen success-screen">
+  <div class="success-check"><svg viewBox="0 0 40 40"><path d="M12 20l6 6 10-12"/></svg></div>
+  <h2 style="font-size: 24px; margin-bottom: 8px;">Contas conectadas!</h2>
+  <p style="color: var(--text-secondary); font-size: 15px; margin-bottom: 32px;" id="successMsg">3 contas sincronizadas com sucesso</p>
+  <button class="btn-primary" onclick="goTo('screen-dashboard')">Ver meu painel →</button>
+</div>
+
+<!-- ===== SCREEN 7: DASHBOARD ===== -->
+<div id="screen-dashboard" class="screen dashboard-screen">
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <div class="top-bar-logo">T</div>
+      <div class="top-bar-brand">Tykhos</div>
+    </div>
+    <div class="top-bar-right">
+      <div class="top-bar-notif">🔔<div class="notif-badge">3</div></div>
+      <div class="top-bar-avatar">GW</div>
+    </div>
+  </div>
+  <div class="dash-content">
+    <div class="sidebar">
+      <div class="sidebar-item active" onclick="switchView('dashboard', this)"><span class="si-icon">📊</span> Dashboard</div>
+      <div class="sidebar-item" onclick="switchView('forecast', this)"><span class="si-icon">🔮</span> Previsão de caixa</div>
+      <div class="sidebar-section">Gestão</div>
+      <div class="sidebar-item" onclick="switchView('payables', this)"><span class="si-icon">📋</span> Contas a pagar/receber</div>
+      <div class="sidebar-item" style="opacity: 0.4; cursor: default;"><span class="si-icon">📈</span> Relatórios <span class="badge" style="font-size:10px; padding:2px 6px; margin-left: auto;">em breve</span></div>
+      <div class="sidebar-section">Config</div>
+      <div class="sidebar-item" style="opacity: 0.4; cursor: default;"><span class="si-icon">🏦</span> Contas bancárias</div>
+      <div class="sidebar-item" style="opacity: 0.4; cursor: default;"><span class="si-icon">⚙️</span> Configurações</div>
+    </div>
+    <div class="main-area">
+      <div class="main-header">
+        <h1 id="dashGreeting">Bom dia, Guilherme 👋</h1>
+        <p id="dashSubtitle">Bella Moda Boutique · Atualizado há 5 minutos</p>
+      </div>
+
+      <!-- ===== VIEW: DASHBOARD ===== -->
+      <div id="view-dashboard" class="dash-view active">
+        <div class="stat-cards">
+          <div class="stat-card highlight">
+            <div class="stat-label">🏦 Saldo consolidado</div>
+            <div class="stat-value">R$ 23.950</div>
+            <div class="stat-change positive">↑ 12% vs mês anterior</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">📥 Entradas (mês)</div>
+            <div class="stat-value">R$ 48.720</div>
+            <div class="stat-change positive">↑ 8% vs mês anterior</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">📤 Saídas (mês)</div>
+            <div class="stat-value">R$ 41.350</div>
+            <div class="stat-change negative">↑ 3% vs mês anterior</div>
+          </div>
+        </div>
+
+        <div class="section-title">Contas conectadas<span class="badge">3 bancos · Open Finance</span></div>
+        <div class="accounts-list">
+          <div class="account-row">
+            <div class="account-logo" style="background: #003399;">Itaú</div>
+            <div class="account-info"><h4>Itaú Empresas</h4><span>Ag 1234 · CC 56789-0</span></div>
+            <div class="account-bar-container"><div class="account-bar" style="width: 52%; background: var(--accent);"></div></div>
+            <div class="account-balance"><div class="amount">R$ 12.450</div><div class="updated">Atualizado agora</div></div>
+          </div>
+          <div class="account-row">
+            <div class="account-logo" style="background: #8A05BE;">Nu</div>
+            <div class="account-info"><h4>Nubank PJ</h4><span>Conta Digital</span></div>
+            <div class="account-bar-container"><div class="account-bar" style="width: 35%; background: var(--purple);"></div></div>
+            <div class="account-balance"><div class="amount">R$ 8.320</div><div class="updated">Atualizado agora</div></div>
+          </div>
+          <div class="account-row">
+            <div class="account-logo" style="background: #CC092F;">B</div>
+            <div class="account-info"><h4>Bradesco Net Empresa</h4><span>Ag 0567 · CC 12345-8</span></div>
+            <div class="account-bar-container"><div class="account-bar" style="width: 13%; background: var(--danger);"></div></div>
+            <div class="account-balance"><div class="amount">R$ 3.180</div><div class="updated">Atualizado agora</div></div>
+          </div>
+        </div>
+
+        <div class="chart-section">
+          <div class="chart-card">
+            <h3>Fluxo de caixa — Últimos 6 meses</h3>
+            <div class="chart-bars">
+              <div class="chart-bar-group"><div class="chart-bar-pair"><div class="chart-bar income" style="height:65px;"></div><div class="chart-bar expense" style="height:55px;"></div></div><div class="chart-bar-label">Nov</div></div>
+              <div class="chart-bar-group"><div class="chart-bar-pair"><div class="chart-bar income" style="height:80px;"></div><div class="chart-bar expense" style="height:70px;"></div></div><div class="chart-bar-label">Dez</div></div>
+              <div class="chart-bar-group"><div class="chart-bar-pair"><div class="chart-bar income" style="height:55px;"></div><div class="chart-bar expense" style="height:60px;"></div></div><div class="chart-bar-label">Jan</div></div>
+              <div class="chart-bar-group"><div class="chart-bar-pair"><div class="chart-bar income" style="height:70px;"></div><div class="chart-bar expense" style="height:58px;"></div></div><div class="chart-bar-label">Fev</div></div>
+              <div class="chart-bar-group"><div class="chart-bar-pair"><div class="chart-bar income" style="height:85px;"></div><div class="chart-bar expense" style="height:65px;"></div></div><div class="chart-bar-label">Mar</div></div>
+              <div class="chart-bar-group"><div class="chart-bar-pair"><div class="chart-bar income" style="height:95px;"></div><div class="chart-bar expense" style="height:78px;"></div></div><div class="chart-bar-label">Abr</div></div>
+            </div>
+            <div class="chart-legend">
+              <div class="chart-legend-item"><div class="chart-legend-dot" style="background: var(--accent);"></div> Entradas</div>
+              <div class="chart-legend-item"><div class="chart-legend-dot" style="background: var(--danger); opacity:0.7;"></div> Saídas</div>
+            </div>
+          </div>
+          <div class="chart-card">
+            <h3>⚠️ Alertas</h3>
+            <div class="alerts-list">
+              <div class="alert-item"><div class="alert-icon warning">⚠️</div><div><strong>Gap de caixa previsto</strong><br>Em 12 dias o saldo pode ficar negativo se os recebíveis de maio não entrarem.<div class="alert-time">Previsão · Hoje</div></div></div>
+              <div class="alert-item"><div class="alert-icon danger">🔴</div><div><strong>Conta Bradesco baixa</strong><br>Saldo abaixo de R$ 5.000 — 2 boletos vencem esta semana.<div class="alert-time">Urgente · Há 2h</div></div></div>
+              <div class="alert-item"><div class="alert-icon info">💡</div><div><strong>Oportunidade</strong><br>R$ 8.320 parados no Nubank. Considere antecipar fornecedores com desconto.<div class="alert-time">Sugestão · Hoje</div></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="transactions-card">
+          <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 16px;">Últimas transações</h3>
+          <div class="tx-row"><div class="tx-icon income">📥</div><div class="tx-info"><h4>Venda cartão — Cielo</h4><span>Itaú · Hoje, 14:32</span></div><div class="tx-amount income">+ R$ 3.240,00</div></div>
+          <div class="tx-row"><div class="tx-icon expense">📤</div><div class="tx-info"><h4>Fornecedor — Malhas SP</h4><span>Bradesco · Hoje, 11:15</span></div><div class="tx-amount expense">- R$ 5.800,00</div></div>
+          <div class="tx-row"><div class="tx-icon expense">📤</div><div class="tx-info"><h4>Aluguel — Loja Centro</h4><span>Itaú · Ontem, 08:00</span></div><div class="tx-amount expense">- R$ 4.500,00</div></div>
+          <div class="tx-row"><div class="tx-icon income">📥</div><div class="tx-info"><h4>Pix recebido — Cliente VIP</h4><span>Nubank · Ontem, 16:45</span></div><div class="tx-amount income">+ R$ 1.890,00</div></div>
+          <div class="tx-row"><div class="tx-icon expense">📤</div><div class="tx-info"><h4>Folha de pagamento</h4><span>Itaú · 25/04, 07:00</span></div><div class="tx-amount expense">- R$ 12.400,00</div></div>
+        </div>
+      </div>
+
+      <!-- ===== VIEW: FORECAST ===== -->
+      <div id="view-forecast" class="dash-view">
+        <div class="forecast-stats">
+          <div class="forecast-stat ok-stat">
+            <div class="fs-label">Saldo atual</div>
+            <div class="fs-value">R$ 23.950</div>
+            <div class="fs-sub">Consolidado 3 bancos</div>
+          </div>
+          <div class="forecast-stat">
+            <div class="fs-label">Entradas previstas</div>
+            <div class="fs-value" style="color: var(--accent);">R$ 32.400</div>
+            <div class="fs-sub">Próximos 30 dias</div>
+          </div>
+          <div class="forecast-stat">
+            <div class="fs-label">Saídas previstas</div>
+            <div class="fs-value" style="color: var(--danger);">R$ 38.200</div>
+            <div class="fs-sub">Próximos 30 dias</div>
+          </div>
+          <div class="forecast-stat danger-stat">
+            <div class="fs-label">⚠️ Saldo mínimo previsto</div>
+            <div class="fs-value">- R$ 1.850</div>
+            <div class="fs-sub">Em 18 de maio</div>
+          </div>
+        </div>
+
+        <div class="forecast-chart-container">
+          <h3>Projeção de saldo — Próximos 30 dias</h3>
+          <p class="forecast-sub">Baseado em contas a pagar, recebíveis confirmados e padrões históricos</p>
+          <svg class="forecast-svg" viewBox="0 0 700 250" xmlns="http://www.w3.org/2000/svg">
+            <!-- Grid lines -->
+            <line x1="50" y1="30" x2="50" y2="210" stroke="#1E293B" stroke-width="1"/>
+            <line x1="50" y1="210" x2="680" y2="210" stroke="#1E293B" stroke-width="1"/>
+            <line x1="50" y1="70" x2="680" y2="70" stroke="#1E293B" stroke-width="0.5" stroke-dasharray="4"/>
+            <line x1="50" y1="110" x2="680" y2="110" stroke="#1E293B" stroke-width="0.5" stroke-dasharray="4"/>
+            <line x1="50" y1="150" x2="680" y2="150" stroke="#1E293B" stroke-width="0.5" stroke-dasharray="4"/>
+            <!-- Zero line -->
+            <line x1="50" y1="180" x2="680" y2="180" stroke="#EF4444" stroke-width="1" stroke-dasharray="6,3" opacity="0.5"/>
+            <text x="46" y="184" text-anchor="end" fill="#EF4444" font-size="10" font-family="Inter" opacity="0.7">R$ 0</text>
+            <!-- Danger zone -->
+            <rect x="50" y="180" width="630" height="30" fill="rgba(239,68,68,0.06)"/>
+            <!-- Y axis labels -->
+            <text x="46" y="34" text-anchor="end" fill="#64748B" font-size="10" font-family="Inter">R$ 30k</text>
+            <text x="46" y="74" text-anchor="end" fill="#64748B" font-size="10" font-family="Inter">R$ 20k</text>
+            <text x="46" y="114" text-anchor="end" fill="#64748B" font-size="10" font-family="Inter">R$ 15k</text>
+            <text x="46" y="154" text-anchor="end" fill="#64748B" font-size="10" font-family="Inter">R$ 5k</text>
+            <text x="46" y="214" text-anchor="end" fill="#64748B" font-size="10" font-family="Inter">-R$ 5k</text>
+            <!-- X axis labels -->
+            <text x="50" y="228" fill="#64748B" font-size="10" font-family="Inter">01/05</text>
+            <text x="176" y="228" fill="#64748B" font-size="10" font-family="Inter">07/05</text>
+            <text x="302" y="228" fill="#64748B" font-size="10" font-family="Inter">14/05</text>
+            <text x="428" y="228" fill="#EF4444" font-size="10" font-family="Inter" font-weight="600">18/05</text>
+            <text x="554" y="228" fill="#64748B" font-size="10" font-family="Inter">25/05</text>
+            <text x="650" y="228" fill="#64748B" font-size="10" font-family="Inter">31/05</text>
+            <!-- Actual balance line (solid) -->
+            <polyline points="50,60 92,65 134,58 176,72 218,85 260,95 302,110"
+              fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- Projected balance line (dashed) -->
+            <polyline points="302,110 344,125 386,142 408,160 428,185 450,175 470,158 492,140 534,130 576,115 618,100 660,90 680,85"
+              fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6,4" opacity="0.7"/>
+            <!-- Danger point -->
+            <circle cx="428" cy="185" r="6" fill="#0B1120" stroke="#EF4444" stroke-width="2"/>
+            <text x="428" y="200" text-anchor="middle" fill="#EF4444" font-size="10" font-weight="600" font-family="Inter">-R$ 1.850</text>
+            <!-- Current point -->
+            <circle cx="50" cy="60" r="5" fill="#10B981"/>
+            <text x="60" y="55" fill="#10B981" font-size="10" font-weight="600" font-family="Inter">R$ 23.950</text>
+            <!-- Recovery -->
+            <circle cx="680" cy="85" r="4" fill="#10B981" opacity="0.5"/>
+            <text x="670" y="78" text-anchor="end" fill="#94A3B8" font-size="10" font-family="Inter">R$ 18.150</text>
+            <!-- Legend -->
+            <line x1="400" y1="15" x2="420" y2="15" stroke="#10B981" stroke-width="2.5"/>
+            <text x="424" y="19" fill="#94A3B8" font-size="10" font-family="Inter">Realizado</text>
+            <line x1="500" y1="15" x2="520" y2="15" stroke="#10B981" stroke-width="2" stroke-dasharray="6,4" opacity="0.7"/>
+            <text x="524" y="19" fill="#94A3B8" font-size="10" font-family="Inter">Projetado</text>
+            <rect x="604" y="10" width="12" height="8" fill="rgba(239,68,68,0.15)" rx="1"/>
+            <text x="620" y="19" fill="#94A3B8" font-size="10" font-family="Inter">Zona de risco</text>
+          </svg>
+        </div>
+
+        <div class="forecast-scenarios">
+          <h3>Cenários para os próximos 30 dias</h3>
+          <div class="scenario-row">
+            <div class="scenario-badge optimistic">Otimista</div>
+            <div class="scenario-info"><h4>Todos os recebíveis entram no prazo</h4><span>Inclui vendas projetadas de R$ 12.000 da campanha de Dia das Mães</span></div>
+            <div class="scenario-value" style="color: var(--accent);">R$ 28.150</div>
+          </div>
+          <div class="scenario-row">
+            <div class="scenario-badge realistic">Realista</div>
+            <div class="scenario-info"><h4>70% dos recebíveis confirmados + padrão histórico</h4><span>Gap temporário em 18/05 — recupera com recebíveis de cartão dia 20</span></div>
+            <div class="scenario-value" style="color: var(--blue);">R$ 18.150</div>
+          </div>
+          <div class="scenario-row">
+            <div class="scenario-badge pessimistic">Pessimista</div>
+            <div class="scenario-info"><h4>Atraso em recebíveis + venda abaixo do esperado</h4><span>Saldo negativo por 5 dias — necessário antecipar recebíveis ou renegociar fornecedor</span></div>
+            <div class="scenario-value" style="color: var(--danger);">- R$ 4.800</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== VIEW: PAYABLES ===== -->
+      <div id="view-payables" class="dash-view">
+        <div class="payables-summary">
+          <div class="pay-summary-card pay-card">
+            <div class="ps-label">📤 A pagar (próx. 7 dias)</div>
+            <div class="ps-value" style="color: var(--danger);">R$ 18.700</div>
+            <div class="ps-count">5 contas · 2 urgentes</div>
+          </div>
+          <div class="pay-summary-card receive-card">
+            <div class="ps-label">📥 A receber (próx. 7 dias)</div>
+            <div class="ps-value" style="color: var(--accent);">R$ 14.230</div>
+            <div class="ps-count">4 recebíveis confirmados</div>
+          </div>
+          <div class="pay-summary-card net-card">
+            <div class="ps-label">📊 Saldo líquido previsto</div>
+            <div class="ps-value" style="color: var(--warning);">R$ 19.480</div>
+            <div class="ps-count">Saldo atual - a pagar + a receber</div>
+          </div>
+        </div>
+
+        <div class="week-calendar">
+          <h3>Calendário da semana — 28 Abr a 04 Mai</h3>
+          <div class="week-header">
+            <div></div>
+            <div class="week-header-day">Seg 28</div>
+            <div class="week-header-day">Ter 29</div>
+            <div class="week-header-day">Qua 30</div>
+            <div class="week-header-day today">Qui 01</div>
+            <div class="week-header-day">Sex 02</div>
+            <div class="week-header-day">Sáb 03</div>
+            <div class="week-header-day">Dom 04</div>
+          </div>
+          <div class="week-row">
+            <div class="week-row-label" style="color: var(--danger);">📤 Saídas</div>
+            <div class="week-cell"><div class="week-item expense">-R$ 2.800 DAS</div></div>
+            <div class="week-cell"></div>
+            <div class="week-cell"><div class="week-item expense">-R$ 5.800 Malhas SP</div></div>
+            <div class="week-cell today-col"><div class="week-item expense">-R$ 1.200 Internet</div></div>
+            <div class="week-cell has-danger"><div class="week-item expense">-R$ 4.500 Aluguel</div><div class="week-item expense">-R$ 4.400 Energia</div></div>
+            <div class="week-cell"></div>
+            <div class="week-cell"></div>
+          </div>
+          <div class="week-row">
+            <div class="week-row-label" style="color: var(--accent);">📥 Entradas</div>
+            <div class="week-cell"></div>
+            <div class="week-cell"><div class="week-item income">+R$ 3.240 Cielo</div></div>
+            <div class="week-cell"><div class="week-item income">+R$ 6.500 Cliente A</div></div>
+            <div class="week-cell today-col"><div class="week-item income">+R$ 1.890 Pix</div></div>
+            <div class="week-cell"><div class="week-item income">+R$ 2.600 Cartão</div></div>
+            <div class="week-cell"></div>
+            <div class="week-cell"></div>
+          </div>
+          <div class="saldo-bar">
+            <span class="saldo-label">Saldo projetado sexta-feira (02/05):</span>
+            <span class="saldo-result warning">R$ 17.060 ⚠️ abaixo da média</span>
+          </div>
+        </div>
+
+        <div class="payables-list-section">
+          <h3>Detalhamento</h3>
+          <div class="pay-tabs">
+            <button class="pay-tab active" onclick="switchPayTab('pagar', this)">A pagar</button>
+            <button class="pay-tab" onclick="switchPayTab('receber', this)">A receber</button>
+          </div>
+
+          <div id="tab-pagar">
+            <div class="pay-row">
+              <div class="pay-status overdue"></div>
+              <div class="pay-info"><h4>DAS — Simples Nacional</h4><span>Imposto mensal · Bradesco</span></div>
+              <div class="pay-amount expense">R$ 2.800,00</div>
+              <div class="pay-due overdue">Venceu 28/04</div>
+            </div>
+            <div class="pay-row">
+              <div class="pay-status due-soon"></div>
+              <div class="pay-info"><h4>Fornecedor — Malhas SP</h4><span>Lote #1247 · Bradesco</span></div>
+              <div class="pay-amount expense">R$ 5.800,00</div>
+              <div class="pay-due today">Hoje</div>
+            </div>
+            <div class="pay-row">
+              <div class="pay-status due-soon"></div>
+              <div class="pay-info"><h4>Internet + Telefone</h4><span>Vivo Empresas · Itaú</span></div>
+              <div class="pay-amount expense">R$ 1.200,00</div>
+              <div class="pay-due today">Hoje</div>
+            </div>
+            <div class="pay-row">
+              <div class="pay-status upcoming"></div>
+              <div class="pay-info"><h4>Aluguel — Loja Centro</h4><span>Mensal · Itaú</span></div>
+              <div class="pay-amount expense">R$ 4.500,00</div>
+              <div class="pay-due">02/05</div>
+            </div>
+            <div class="pay-row">
+              <div class="pay-status upcoming"></div>
+              <div class="pay-info"><h4>Energia elétrica</h4><span>CPFL · Bradesco</span></div>
+              <div class="pay-amount expense">R$ 4.400,00</div>
+              <div class="pay-due">02/05</div>
+            </div>
+            <div class="saldo-bar">
+              <span class="saldo-label">Total a pagar (7 dias):</span>
+              <span class="saldo-result danger">R$ 18.700,00</span>
+            </div>
+          </div>
+
+          <div id="tab-receber" style="display: none;">
+            <div class="pay-row">
+              <div class="pay-status received"></div>
+              <div class="pay-info"><h4>Venda cartão — Cielo</h4><span>Lote D+2 · Itaú</span></div>
+              <div class="pay-amount income">R$ 3.240,00</div>
+              <div class="pay-due">29/04</div>
+            </div>
+            <div class="pay-row">
+              <div class="pay-status received"></div>
+              <div class="pay-info"><h4>Cliente A — Pedido #892</h4><span>Boleto · Nubank</span></div>
+              <div class="pay-amount income">R$ 6.500,00</div>
+              <div class="pay-due">30/04</div>
+            </div>
+            <div class="pay-row">
+              <div class="pay-status due-soon"></div>
+              <div class="pay-info"><h4>Pix — Cliente recorrente</h4><span>Mensal · Nubank</span></div>
+              <div class="pay-amount income">R$ 1.890,00</div>
+              <div class="pay-due today">Hoje</div>
+            </div>
+            <div class="pay-row">
+              <div class="pay-status upcoming"></div>
+              <div class="pay-info"><h4>Venda cartão — Cielo</h4><span>Lote D+2 · Itaú</span></div>
+              <div class="pay-amount income">R$ 2.600,00</div>
+              <div class="pay-due">02/05</div>
+            </div>
+            <div class="saldo-bar">
+              <span class="saldo-label">Total a receber (7 dias):</span>
+              <span class="saldo-result ok">R$ 14.230,00</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="proto-badge"><div class="proto-dot"></div>Protótipo Tykhos · Dados simulados</div>
+
+<script>
+  let selectedBanks = [];
+  let consentQueue = [];
+  let currentConsentIndex = 0;
+
+  const bankData = {
+    itau: { name: 'Itaú Empresas', logo: 'Itaú', color: '#003399' },
+    nubank: { name: 'Nubank PJ', logo: 'Nu', color: '#8A05BE' },
+    bradesco: { name: 'Bradesco Net Empresa', logo: 'B', color: '#CC092F' },
+    bb: { name: 'Banco do Brasil', logo: 'BB', color: '#003882' },
+    inter: { name: 'Inter Empresas', logo: 'inter', color: '#FF7A00' },
+    caixa: { name: 'Caixa Econômica', logo: 'CEF', color: '#005CA9' },
+  };
+
+  function goTo(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo(0, 0);
+  }
+
+  function saveProfile() {
+    const name = document.getElementById('companyName').value || 'Minha Empresa';
+    document.getElementById('dashSubtitle').textContent = name + ' · Atualizado há 5 minutos';
+    goTo('screen-connect');
+  }
+
+  function toggleBank(card, bankId) {
+    const idx = selectedBanks.indexOf(bankId);
+    if (idx > -1) { selectedBanks.splice(idx, 1); card.classList.remove('selected'); }
+    else { selectedBanks.push(bankId); card.classList.add('selected'); }
+    const btn = document.getElementById('btnConnect');
+    const count = document.getElementById('connectCount');
+    if (selectedBanks.length > 0) {
+      btn.disabled = false;
+      count.textContent = selectedBanks.length + (selectedBanks.length === 1 ? ' banco selecionado' : ' bancos selecionados');
+    } else {
+      btn.disabled = true;
+      count.textContent = 'Selecione pelo menos 1 banco para continuar';
+    }
+  }
+
+  function startConsent() { consentQueue = [...selectedBanks]; currentConsentIndex = 0; showConsent(); }
+
+  function showConsent() {
+    if (currentConsentIndex >= consentQueue.length) { startConnecting(); return; }
+    const bank = bankData[consentQueue[currentConsentIndex]];
+    const logo = document.getElementById('consentBankLogo');
+    logo.textContent = bank.logo;
+    logo.style.background = bank.color;
+    logo.style.color = bank.color === '#FFEF00' ? '#003882' : 'white';
+    document.getElementById('consentBankName').textContent = 'O ' + bank.name + ' compartilhará seus dados com a Tykhos via Open Finance';
+    goTo('screen-consent');
+  }
+
+  function authorizeBank() { currentConsentIndex++; showConsent(); }
+
+  function startConnecting() {
+    goTo('screen-connecting');
+    const c = document.getElementById('connectingBanks');
+    c.innerHTML = '';
+    consentQueue.forEach((id) => {
+      const b = bankData[id];
+      const d = document.createElement('div');
+      d.className = 'connecting-bank-item';
+      d.innerHTML = `<div style="width:32px;height:32px;border-radius:8px;background:${b.color};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:${b.color==='#FFEF00'?'#003882':'white'};flex-shrink:0;">${b.logo}</div><span>${b.name}</span><div class="status-dot" id="dot-${id}"></div>`;
+      c.appendChild(d);
+    });
+    consentQueue.forEach((id, i) => {
+      setTimeout(() => document.getElementById('dot-' + id).classList.add('loading'), i * 800);
+      setTimeout(() => { const d = document.getElementById('dot-' + id); d.classList.remove('loading'); d.classList.add('done'); }, i * 800 + 1200);
+    });
+    setTimeout(() => {
+      document.getElementById('successMsg').textContent = consentQueue.length + (consentQueue.length === 1 ? ' conta sincronizada com sucesso' : ' contas sincronizadas com sucesso');
+      goTo('screen-success');
+    }, consentQueue.length * 800 + 1800);
+  }
+
+  function switchView(viewName, el) {
+    document.querySelectorAll('.dash-view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-' + viewName).classList.add('active');
+    document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+    if (el) el.classList.add('active');
+
+    const header = document.querySelector('.main-header h1');
+    const sub = document.querySelector('.main-header p');
+    const name = document.getElementById('companyName')?.value || 'Bella Moda Boutique';
+    if (viewName === 'dashboard') { header.textContent = 'Bom dia, Guilherme 👋'; sub.textContent = name + ' · Atualizado há 5 minutos'; }
+    else if (viewName === 'forecast') { header.textContent = '🔮 Previsão de caixa'; sub.textContent = 'Projeção dos próximos 30 dias baseada em dados reais'; }
+    else if (viewName === 'payables') { header.textContent = '📋 Contas a pagar e receber'; sub.textContent = 'Visão semanal de vencimentos e recebíveis'; }
+  }
+
+  function switchPayTab(tab, el) {
+    document.querySelectorAll('.pay-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('tab-pagar').style.display = tab === 'pagar' ? 'block' : 'none';
+    document.getElementById('tab-receber').style.display = tab === 'receber' ? 'block' : 'none';
+  }
+</script>
+</body>
+</html>
