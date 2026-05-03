@@ -1033,7 +1033,21 @@
     showChatFab();
 
     // ===== FORECAST VIEW =====
+    let forecastInsights = [];
+    const forecastDelta = forecastEntradas - forecastSaidas;
+    if (forecastMin < 0) forecastInsights.push({ icon: '🚨', text: `<strong>Gap de caixa previsto em 18/05.</strong> O saldo pode chegar a ${fmt(forecastMin)} negativo. Ação recomendada: antecipe ${fmt(Math.abs(forecastMin) + 3000)} em recebíveis de cartão até dia 15/05.`, tag: 'alert', tagLabel: 'Ação urgente' });
+    else forecastInsights.push({ icon: '✅', text: `O caixa se mantém <strong>positivo</strong> nos próximos 30 dias. Saldo mínimo previsto: <strong>${fmt(forecastMin)}</strong>. Momento seguro para investir em estoque ou marketing.`, tag: 'good', tagLabel: 'Caminho livre' });
+    if (forecastSaidas > forecastEntradas) forecastInsights.push({ icon: '📊', text: `Saídas previstas (<strong>${fmt(forecastSaidas)}</strong>) superam entradas (<strong>${fmt(forecastEntradas)}</strong>) em <strong>${fmt(Math.abs(forecastDelta))}</strong>. Seu caixa atual absorve, mas esse padrão não é sustentável por mais de 2 meses.`, tag: 'alert', tagLabel: 'Tendência negativa' });
+    else forecastInsights.push({ icon: '📈', text: `Entradas previstas superam saídas em <strong>${fmt(forecastDelta)}</strong>. Se o padrão se mantiver, seu caixa cresce ${Math.round(forecastDelta/totalBalance*100)}% no próximo mês.`, tag: 'good', tagLabel: 'Tendência positiva' });
+    forecastInsights.push({ icon: '💡', text: `<strong>Dica:</strong> o cenário pessimista assume atraso em recebíveis. Negocie com a Cielo/Stone antecipação automática D+1 para vendas de cartão — isso elimina o risco de gap mesmo no pior caso.`, tag: 'tip', tagLabel: 'Sugestão IA' });
+
     document.getElementById('view-forecast').innerHTML = `
+      <div class="ai-insights" style="margin-bottom:20px;">
+        <div class="ai-insights-header"><span class="ai-badge">✨ IA</span><span>Análise preditiva das suas finanças</span></div>
+        <div class="insights-grid">${forecastInsights.map(i => `
+          <div class="insight-card"><div class="insight-icon">${i.icon}</div><div class="insight-text">${i.text}</div><span class="insight-tag ${i.tag}">${i.tagLabel}</span></div>`).join('')}
+        </div>
+      </div>
       <div class="forecast-stats">
         <div class="forecast-stat ok-stat"><div class="fs-label">Saldo atual</div><div class="fs-value">${fmt(totalBalance)}</div><div class="fs-sub">Consolidado ${banks.length} ${banks.length===1?'banco':'bancos'}</div></div>
         <div class="forecast-stat"><div class="fs-label">Entradas previstas</div><div class="fs-value" style="color:var(--accent);">${fmt(forecastEntradas)}</div><div class="fs-sub">Próximos 30 dias</div></div>
@@ -1079,7 +1093,24 @@
       </div>`;
 
     // ===== PAYABLES VIEW =====
+    let payInsights = [];
+    const overdueItems = allPay.filter(p => p.status === 'overdue');
+    const dueTodayItems = allPay.filter(p => p.status === 'due-soon');
+    const coverageRatio = totalBalance / totalPay;
+    if (overdueItems.length > 0) payInsights.push({ icon: '🔴', text: `Você tem <strong>${overdueItems.length} ${overdueItems.length===1?'conta vencida':'contas vencidas'}</strong> totalizando <strong>${fmt(overdueItems.reduce((s,p)=>s+p.amount,0))}</strong>. Pague hoje para evitar juros de mora (geralmente 2% + 0,033%/dia).`, tag: 'alert', tagLabel: 'Vencido' });
+    if (dueTodayItems.length > 0) payInsights.push({ icon: '⏰', text: `<strong>${dueTodayItems.length} ${dueTodayItems.length===1?'conta vence':'contas vencem'} hoje</strong> (${fmt(dueTodayItems.reduce((s,p)=>s+p.amount,0))}). ${totalBalance > dueTodayItems.reduce((s,p)=>s+p.amount,0) ? 'Você tem saldo suficiente — recomendo pagar agora.' : '⚠️ Saldo insuficiente para cobrir tudo. Priorize a de maior juros.'}`, tag: 'alert', tagLabel: 'Vence hoje' });
+    if (coverageRatio > 2) payInsights.push({ icon: '💪', text: `Seu saldo cobre <strong>${Math.round(coverageRatio)}x</strong> as contas da semana. Posição confortável — bom momento para negociar <strong>descontos por antecipação</strong> com fornecedores (economia típica de 3-5%).`, tag: 'good', tagLabel: 'Oportunidade' });
+    else if (coverageRatio > 1) payInsights.push({ icon: '⚖️', text: `Seu saldo cobre as contas da semana, mas com folga de apenas <strong>${fmt(totalBalance - totalPay)}</strong>. Evite gastos não previstos até os próximos recebíveis entrarem.`, tag: 'tip', tagLabel: 'Margem apertada' });
+    else payInsights.push({ icon: '🚨', text: `<strong>Saldo insuficiente.</strong> Você tem ${fmt(totalBalance)} mas precisa de ${fmt(totalPay)} esta semana. Faltam <strong>${fmt(totalPay - totalBalance)}</strong>. Priorize por juros e negocie prazos.`, tag: 'alert', tagLabel: 'Déficit' });
+    if (totalRec > 0) payInsights.push({ icon: '📥', text: `Você tem <strong>${fmt(totalRec)}</strong> a receber nos próximos dias. ${totalRec > totalPay ? 'Isso cobre todas as saídas previstas — garanta que os recebíveis entrem no prazo.' : `Não cobre os ${fmt(totalPay)} a pagar. Diferença de ${fmt(totalPay - totalRec)} precisa sair do caixa atual.`}`, tag: 'tip', tagLabel: 'Fluxo de entrada' });
+
     document.getElementById('view-payables').innerHTML = `
+      <div class="ai-insights" style="margin-bottom:20px;">
+        <div class="ai-insights-header"><span class="ai-badge">✨ IA</span><span>Análise inteligente de vencimentos</span></div>
+        <div class="insights-grid">${payInsights.map(i => `
+          <div class="insight-card"><div class="insight-icon">${i.icon}</div><div class="insight-text">${i.text}</div><span class="insight-tag ${i.tag}">${i.tagLabel}</span></div>`).join('')}
+        </div>
+      </div>
       <div class="payables-summary">
         <div class="pay-summary-card pay-card"><div class="ps-label">📤 A pagar (próx. 7 dias)</div><div class="ps-value" style="color:var(--danger);">${fmt(totalPay)}</div><div class="ps-count">${allPay.length} contas · ${urgentCount} urgente${urgentCount!==1?'s':''}</div></div>
         <div class="pay-summary-card receive-card"><div class="ps-label">📥 A receber (próx. 7 dias)</div><div class="ps-value" style="color:var(--accent);">${fmt(totalRec)}</div><div class="ps-count">${allRec.length} recebíveis</div></div>
