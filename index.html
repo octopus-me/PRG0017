@@ -231,13 +231,23 @@
   .chart-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 22px; }
   .chart-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
 
-  .chart-bars { display: flex; align-items: flex-end; gap: 6px; height: 140px; padding-top: 10px; }
-  .chart-bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-  .chart-bar-pair { display: flex; gap: 3px; align-items: flex-end; height: 110px; }
-  .chart-bar { width: 14px; border-radius: 4px 4px 0 0; animation: barGrowH 0.8s ease backwards; }
-  .chart-bar.income { background: var(--accent); }
-  .chart-bar.expense { background: var(--danger); opacity: 0.7; }
-  .chart-bar-label { font-size: 10px; color: var(--text-muted); }
+  .cashflow-chart { position: relative; }
+  .cashflow-svg { width: 100%; height: 240px; }
+  .chart-tooltip {
+    position: absolute; background: var(--bg-card); border: 1px solid var(--border-light);
+    border-radius: 10px; padding: 12px 16px; font-size: 12px; pointer-events: none;
+    opacity: 0; transition: opacity 0.2s; z-index: 10; min-width: 160px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  }
+  .chart-tooltip.visible { opacity: 1; }
+  .chart-tooltip .tt-week { font-weight: 600; font-size: 13px; margin-bottom: 8px; color: var(--text-primary); }
+  .chart-tooltip .tt-row { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 4px; }
+  .chart-tooltip .tt-label { color: var(--text-muted); }
+  .chart-tooltip .tt-val { font-weight: 600; }
+  .chart-tooltip .tt-val.income { color: var(--accent); }
+  .chart-tooltip .tt-val.expense { color: var(--danger); }
+  .chart-tooltip .tt-val.balance { color: var(--text-primary); }
+  .chart-tooltip .tt-divider { height: 1px; background: var(--border); margin: 6px 0; }
   .chart-legend { display: flex; gap: 16px; margin-top: 12px; }
   .chart-legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
   .chart-legend-dot { width: 8px; height: 8px; border-radius: 2px; }
@@ -363,8 +373,134 @@
   .saldo-bar .saldo-result.warning { color: var(--warning); }
   .saldo-bar .saldo-result.danger { color: var(--danger); }
 
+  /* ===== AI INSIGHTS ===== */
+  .ai-insights { margin-bottom: 24px; }
+  .ai-insights-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .ai-badge { background: linear-gradient(135deg, #8B5CF6, #6366F1); padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; color: white; }
+  .ai-insights-header span { font-size: 13px; color: var(--text-muted); }
+  .insights-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+  .insight-card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 16px 18px; position: relative; overflow: hidden;
+    animation: slideUp 0.5s ease backwards;
+  }
+  .insight-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, #8B5CF6, #6366F1, #8B5CF6);
+  }
+  .insight-card:nth-child(2) { animation-delay: 0.1s; }
+  .insight-card:nth-child(3) { animation-delay: 0.2s; }
+  .insight-icon { font-size: 18px; margin-bottom: 8px; }
+  .insight-text { font-size: 13px; line-height: 1.6; color: var(--text-secondary); }
+  .insight-text strong { color: var(--text-primary); font-weight: 600; }
+  .insight-tag { display: inline-block; margin-top: 8px; font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+  .insight-tag.alert { background: rgba(245,158,11,0.12); color: var(--warning); }
+  .insight-tag.tip { background: rgba(139,92,246,0.12); color: #A78BFA; }
+  .insight-tag.good { background: rgba(16,185,129,0.12); color: var(--accent); }
+
+  /* ===== AI CHAT ===== */
+  .chat-fab {
+    position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px;
+    border-radius: 50%; background: linear-gradient(135deg, #8B5CF6, #6366F1);
+    border: none; color: white; font-size: 24px; cursor: pointer;
+    box-shadow: 0 4px 20px rgba(99,102,241,0.4); z-index: 200;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.3s;
+  }
+  .chat-fab:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(99,102,241,0.5); }
+  .chat-fab.hidden { display: none; }
+  .chat-fab .fab-badge {
+    position: absolute; top: -2px; right: -2px; width: 18px; height: 18px;
+    background: var(--accent); border-radius: 50%; font-size: 10px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .chat-panel {
+    position: fixed; bottom: 24px; right: 24px; width: 380px; height: 520px;
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px;
+    z-index: 300; display: none; flex-direction: column; overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+    animation: fadeIn 0.3s ease;
+  }
+  .chat-panel.open { display: flex; }
+
+  .chat-header {
+    display: flex; align-items: center; gap: 12px; padding: 16px 20px;
+    border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  .chat-avatar {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: linear-gradient(135deg, #8B5CF6, #6366F1);
+    display: flex; align-items: center; justify-content: center; font-size: 16px;
+  }
+  .chat-header-info { flex: 1; }
+  .chat-header-info h4 { font-size: 14px; font-weight: 600; }
+  .chat-header-info span { font-size: 11px; color: var(--accent); display: flex; align-items: center; gap: 4px; }
+  .chat-header-info span::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .chat-close {
+    width: 32px; height: 32px; border-radius: 8px; border: none;
+    background: var(--bg-surface); color: var(--text-muted); font-size: 16px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .chat-close:hover { color: var(--text-primary); }
+
+  .chat-messages {
+    flex: 1; overflow-y: auto; padding: 16px 20px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .chat-msg {
+    max-width: 85%; padding: 12px 16px; border-radius: 14px;
+    font-size: 13px; line-height: 1.6; animation: slideUp 0.3s ease;
+  }
+  .chat-msg.bot {
+    background: var(--bg-surface); align-self: flex-start;
+    border-bottom-left-radius: 4px;
+  }
+  .chat-msg.user {
+    background: linear-gradient(135deg, #8B5CF6, #6366F1); color: white;
+    align-self: flex-end; border-bottom-right-radius: 4px;
+  }
+  .chat-msg .msg-label { font-size: 10px; color: var(--text-muted); margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
+  .chat-msg.user .msg-label { color: rgba(255,255,255,0.6); }
+  .chat-typing { display: flex; gap: 4px; padding: 12px 16px; align-self: flex-start; }
+  .chat-typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); animation: pulse 1s infinite; }
+  .chat-typing span:nth-child(2) { animation-delay: 0.2s; }
+  .chat-typing span:nth-child(3) { animation-delay: 0.4s; }
+
+  .chat-suggestions {
+    display: flex; flex-wrap: wrap; gap: 6px; padding: 0 20px 12px;
+    flex-shrink: 0;
+  }
+  .chat-suggestion {
+    padding: 6px 12px; border-radius: 8px; font-size: 12px;
+    background: var(--bg-surface); border: 1px solid var(--border);
+    color: var(--text-secondary); cursor: pointer; font-family: 'Inter', sans-serif;
+    transition: all 0.2s;
+  }
+  .chat-suggestion:hover { border-color: #8B5CF6; color: #A78BFA; }
+
+  .chat-input-area {
+    display: flex; gap: 8px; padding: 12px 16px;
+    border-top: 1px solid var(--border); flex-shrink: 0;
+  }
+  .chat-input {
+    flex: 1; padding: 10px 14px; border-radius: 10px;
+    background: var(--bg-surface); border: 1px solid var(--border);
+    color: var(--text-primary); font-size: 13px; font-family: 'Inter', sans-serif;
+    outline: none; transition: border-color 0.2s;
+  }
+  .chat-input:focus { border-color: #8B5CF6; }
+  .chat-input::placeholder { color: var(--text-muted); }
+  .chat-send {
+    width: 40px; height: 40px; border-radius: 10px; border: none;
+    background: linear-gradient(135deg, #8B5CF6, #6366F1); color: white;
+    font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: transform 0.2s;
+  }
+  .chat-send:hover { transform: scale(1.05); }
+
   /* Prototype badge */
-  .proto-badge { position: fixed; bottom: 16px; right: 16px; background: var(--bg-card); border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; font-size: 11px; color: var(--text-muted); z-index: 100; display: flex; align-items: center; gap: 6px; }
+  .proto-badge { position: fixed; bottom: 24px; left: 16px; background: var(--bg-card); border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; font-size: 11px; color: var(--text-muted); z-index: 100; display: flex; align-items: center; gap: 6px; }
   .proto-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
 
   @media (max-width: 768px) {
@@ -404,18 +540,24 @@
     <div class="step-dot"></div>
   </div>
   <div class="profile-card">
-    <h2>Sobre sua empresa</h2>
+    <h2>Sobre você e sua empresa</h2>
     <p class="profile-sub">Essas informações nos ajudam a personalizar seus insights financeiros.</p>
-    <div class="form-group">
-      <label>Nome da empresa</label>
-      <input type="text" id="companyName" placeholder="Ex: Bella Moda Boutique" value="Bella Moda Boutique">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Seu nome</label>
+        <input type="text" id="userName" placeholder="Ex: Maria Silva" value="">
+      </div>
+      <div class="form-group">
+        <label>Nome da empresa</label>
+        <input type="text" id="companyName" placeholder="Ex: Bella Moda Boutique" value="">
+      </div>
     </div>
     <div class="form-row">
       <div class="form-group">
         <label>Setor</label>
         <select id="companySector">
           <option value="">Selecione...</option>
-          <option value="varejo" selected>Varejo / Comércio</option>
+          <option value="varejo">Varejo / Comércio</option>
           <option value="servicos">Serviços</option>
           <option value="alimentacao">Alimentação</option>
           <option value="tecnologia">Tecnologia</option>
@@ -430,7 +572,7 @@
         <select id="companyRevenue">
           <option value="">Selecione...</option>
           <option value="ate10k">Até R$ 10.000</option>
-          <option value="10k50k" selected>R$ 10.000 — R$ 50.000</option>
+          <option value="10k50k">R$ 10.000 — R$ 50.000</option>
           <option value="50k100k">R$ 50.000 — R$ 100.000</option>
           <option value="100k500k">R$ 100.000 — R$ 500.000</option>
           <option value="acima500k">Acima de R$ 500.000</option>
@@ -442,7 +584,7 @@
         <label>Quantos funcionários?</label>
         <select id="companySize">
           <option value="1">Só eu</option>
-          <option value="2-5" selected>2 — 5</option>
+          <option value="2-5">2 — 5</option>
           <option value="6-20">6 — 20</option>
           <option value="21-50">21 — 50</option>
           <option value="50+">Mais de 50</option>
@@ -452,7 +594,7 @@
         <label>Quantas contas bancárias PJ?</label>
         <select id="companyBanks">
           <option value="1">1 conta</option>
-          <option value="2" selected>2 contas</option>
+          <option value="2">2 contas</option>
           <option value="3">3 contas</option>
           <option value="4+">4 ou mais</option>
         </select>
@@ -570,7 +712,7 @@
     </div>
     <div class="top-bar-right">
       <div class="top-bar-notif">🔔<div class="notif-badge">3</div></div>
-      <div class="top-bar-avatar">GW</div>
+      <div class="top-bar-avatar" id="avatarInitials">--</div>
     </div>
   </div>
   <div class="dash-content">
@@ -586,322 +728,40 @@
     </div>
     <div class="main-area">
       <div class="main-header">
-        <h1 id="dashGreeting">Bom dia, Guilherme 👋</h1>
+        <h1 id="dashGreeting">Bom dia 👋</h1>
         <p id="dashSubtitle">Bella Moda Boutique · Atualizado há 5 minutos</p>
       </div>
 
-      <!-- ===== VIEW: DASHBOARD ===== -->
-      <div id="view-dashboard" class="dash-view active">
-        <div class="stat-cards">
-          <div class="stat-card highlight">
-            <div class="stat-label">🏦 Saldo consolidado</div>
-            <div class="stat-value">R$ 23.950</div>
-            <div class="stat-change positive">↑ 12% vs mês anterior</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">📥 Entradas (mês)</div>
-            <div class="stat-value">R$ 48.720</div>
-            <div class="stat-change positive">↑ 8% vs mês anterior</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">📤 Saídas (mês)</div>
-            <div class="stat-value">R$ 41.350</div>
-            <div class="stat-change negative">↑ 3% vs mês anterior</div>
-          </div>
-        </div>
-
-        <div class="section-title">Contas conectadas<span class="badge">3 bancos · Open Finance</span></div>
-        <div class="accounts-list">
-          <div class="account-row">
-            <div class="account-logo" style="background: #003399;">Itaú</div>
-            <div class="account-info"><h4>Itaú Empresas</h4><span>Ag 1234 · CC 56789-0</span></div>
-            <div class="account-bar-container"><div class="account-bar" style="width: 52%; background: var(--accent);"></div></div>
-            <div class="account-balance"><div class="amount">R$ 12.450</div><div class="updated">Atualizado agora</div></div>
-          </div>
-          <div class="account-row">
-            <div class="account-logo" style="background: #8A05BE;">Nu</div>
-            <div class="account-info"><h4>Nubank PJ</h4><span>Conta Digital</span></div>
-            <div class="account-bar-container"><div class="account-bar" style="width: 35%; background: var(--purple);"></div></div>
-            <div class="account-balance"><div class="amount">R$ 8.320</div><div class="updated">Atualizado agora</div></div>
-          </div>
-          <div class="account-row">
-            <div class="account-logo" style="background: #CC092F;">B</div>
-            <div class="account-info"><h4>Bradesco Net Empresa</h4><span>Ag 0567 · CC 12345-8</span></div>
-            <div class="account-bar-container"><div class="account-bar" style="width: 13%; background: var(--danger);"></div></div>
-            <div class="account-balance"><div class="amount">R$ 3.180</div><div class="updated">Atualizado agora</div></div>
-          </div>
-        </div>
-
-        <div class="chart-section">
-          <div class="chart-card">
-            <h3>Fluxo de caixa — Últimos 6 meses</h3>
-            <div class="chart-bars">
-              <div class="chart-bar-group"><div class="chart-bar-pair"><div class="chart-bar income" style="height:65px;"></div><div class="chart-bar expense" style="height:55px;"></div></div><div class="chart-bar-label">Nov</div></div>
-              <div class="chart-bar-group"><div class="chart-bar-pair"><div class="chart-bar income" style="height:80px;"></div><div class="chart-bar expense" style="height:70px;"></div></div><div class="chart-bar-label">Dez</div></div>
-              <div class="chart-bar-group"><div class="chart-bar-pair"><div class="chart-bar income" style="height:55px;"></div><div class="chart-bar expense" style="height:60px;"></div></div><div class="chart-bar-label">Jan</div></div>
-              <div class="chart-bar-group"><div class="chart-bar-pair"><div class="chart-bar income" style="height:70px;"></div><div class="chart-bar expense" style="height:58px;"></div></div><div class="chart-bar-label">Fev</div></div>
-              <div class="chart-bar-group"><div class="chart-bar-pair"><div class="chart-bar income" style="height:85px;"></div><div class="chart-bar expense" style="height:65px;"></div></div><div class="chart-bar-label">Mar</div></div>
-              <div class="chart-bar-group"><div class="chart-bar-pair"><div class="chart-bar income" style="height:95px;"></div><div class="chart-bar expense" style="height:78px;"></div></div><div class="chart-bar-label">Abr</div></div>
-            </div>
-            <div class="chart-legend">
-              <div class="chart-legend-item"><div class="chart-legend-dot" style="background: var(--accent);"></div> Entradas</div>
-              <div class="chart-legend-item"><div class="chart-legend-dot" style="background: var(--danger); opacity:0.7;"></div> Saídas</div>
-            </div>
-          </div>
-          <div class="chart-card">
-            <h3>⚠️ Alertas</h3>
-            <div class="alerts-list">
-              <div class="alert-item"><div class="alert-icon warning">⚠️</div><div><strong>Gap de caixa previsto</strong><br>Em 12 dias o saldo pode ficar negativo se os recebíveis de maio não entrarem.<div class="alert-time">Previsão · Hoje</div></div></div>
-              <div class="alert-item"><div class="alert-icon danger">🔴</div><div><strong>Conta Bradesco baixa</strong><br>Saldo abaixo de R$ 5.000 — 2 boletos vencem esta semana.<div class="alert-time">Urgente · Há 2h</div></div></div>
-              <div class="alert-item"><div class="alert-icon info">💡</div><div><strong>Oportunidade</strong><br>R$ 8.320 parados no Nubank. Considere antecipar fornecedores com desconto.<div class="alert-time">Sugestão · Hoje</div></div></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="transactions-card">
-          <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 16px;">Últimas transações</h3>
-          <div class="tx-row"><div class="tx-icon income">📥</div><div class="tx-info"><h4>Venda cartão — Cielo</h4><span>Itaú · Hoje, 14:32</span></div><div class="tx-amount income">+ R$ 3.240,00</div></div>
-          <div class="tx-row"><div class="tx-icon expense">📤</div><div class="tx-info"><h4>Fornecedor — Malhas SP</h4><span>Bradesco · Hoje, 11:15</span></div><div class="tx-amount expense">- R$ 5.800,00</div></div>
-          <div class="tx-row"><div class="tx-icon expense">📤</div><div class="tx-info"><h4>Aluguel — Loja Centro</h4><span>Itaú · Ontem, 08:00</span></div><div class="tx-amount expense">- R$ 4.500,00</div></div>
-          <div class="tx-row"><div class="tx-icon income">📥</div><div class="tx-info"><h4>Pix recebido — Cliente VIP</h4><span>Nubank · Ontem, 16:45</span></div><div class="tx-amount income">+ R$ 1.890,00</div></div>
-          <div class="tx-row"><div class="tx-icon expense">📤</div><div class="tx-info"><h4>Folha de pagamento</h4><span>Itaú · 25/04, 07:00</span></div><div class="tx-amount expense">- R$ 12.400,00</div></div>
-        </div>
-      </div>
-
-      <!-- ===== VIEW: FORECAST ===== -->
-      <div id="view-forecast" class="dash-view">
-        <div class="forecast-stats">
-          <div class="forecast-stat ok-stat">
-            <div class="fs-label">Saldo atual</div>
-            <div class="fs-value">R$ 23.950</div>
-            <div class="fs-sub">Consolidado 3 bancos</div>
-          </div>
-          <div class="forecast-stat">
-            <div class="fs-label">Entradas previstas</div>
-            <div class="fs-value" style="color: var(--accent);">R$ 32.400</div>
-            <div class="fs-sub">Próximos 30 dias</div>
-          </div>
-          <div class="forecast-stat">
-            <div class="fs-label">Saídas previstas</div>
-            <div class="fs-value" style="color: var(--danger);">R$ 38.200</div>
-            <div class="fs-sub">Próximos 30 dias</div>
-          </div>
-          <div class="forecast-stat danger-stat">
-            <div class="fs-label">⚠️ Saldo mínimo previsto</div>
-            <div class="fs-value">- R$ 1.850</div>
-            <div class="fs-sub">Em 18 de maio</div>
-          </div>
-        </div>
-
-        <div class="forecast-chart-container">
-          <h3>Projeção de saldo — Próximos 30 dias</h3>
-          <p class="forecast-sub">Baseado em contas a pagar, recebíveis confirmados e padrões históricos</p>
-          <svg class="forecast-svg" viewBox="0 0 700 250" xmlns="http://www.w3.org/2000/svg">
-            <!-- Grid lines -->
-            <line x1="50" y1="30" x2="50" y2="210" stroke="#1E293B" stroke-width="1"/>
-            <line x1="50" y1="210" x2="680" y2="210" stroke="#1E293B" stroke-width="1"/>
-            <line x1="50" y1="70" x2="680" y2="70" stroke="#1E293B" stroke-width="0.5" stroke-dasharray="4"/>
-            <line x1="50" y1="110" x2="680" y2="110" stroke="#1E293B" stroke-width="0.5" stroke-dasharray="4"/>
-            <line x1="50" y1="150" x2="680" y2="150" stroke="#1E293B" stroke-width="0.5" stroke-dasharray="4"/>
-            <!-- Zero line -->
-            <line x1="50" y1="180" x2="680" y2="180" stroke="#EF4444" stroke-width="1" stroke-dasharray="6,3" opacity="0.5"/>
-            <text x="46" y="184" text-anchor="end" fill="#EF4444" font-size="10" font-family="Inter" opacity="0.7">R$ 0</text>
-            <!-- Danger zone -->
-            <rect x="50" y="180" width="630" height="30" fill="rgba(239,68,68,0.06)"/>
-            <!-- Y axis labels -->
-            <text x="46" y="34" text-anchor="end" fill="#64748B" font-size="10" font-family="Inter">R$ 30k</text>
-            <text x="46" y="74" text-anchor="end" fill="#64748B" font-size="10" font-family="Inter">R$ 20k</text>
-            <text x="46" y="114" text-anchor="end" fill="#64748B" font-size="10" font-family="Inter">R$ 15k</text>
-            <text x="46" y="154" text-anchor="end" fill="#64748B" font-size="10" font-family="Inter">R$ 5k</text>
-            <text x="46" y="214" text-anchor="end" fill="#64748B" font-size="10" font-family="Inter">-R$ 5k</text>
-            <!-- X axis labels -->
-            <text x="50" y="228" fill="#64748B" font-size="10" font-family="Inter">01/05</text>
-            <text x="176" y="228" fill="#64748B" font-size="10" font-family="Inter">07/05</text>
-            <text x="302" y="228" fill="#64748B" font-size="10" font-family="Inter">14/05</text>
-            <text x="428" y="228" fill="#EF4444" font-size="10" font-family="Inter" font-weight="600">18/05</text>
-            <text x="554" y="228" fill="#64748B" font-size="10" font-family="Inter">25/05</text>
-            <text x="650" y="228" fill="#64748B" font-size="10" font-family="Inter">31/05</text>
-            <!-- Actual balance line (solid) -->
-            <polyline points="50,60 92,65 134,58 176,72 218,85 260,95 302,110"
-              fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <!-- Projected balance line (dashed) -->
-            <polyline points="302,110 344,125 386,142 408,160 428,185 450,175 470,158 492,140 534,130 576,115 618,100 660,90 680,85"
-              fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6,4" opacity="0.7"/>
-            <!-- Danger point -->
-            <circle cx="428" cy="185" r="6" fill="#0B1120" stroke="#EF4444" stroke-width="2"/>
-            <text x="428" y="200" text-anchor="middle" fill="#EF4444" font-size="10" font-weight="600" font-family="Inter">-R$ 1.850</text>
-            <!-- Current point -->
-            <circle cx="50" cy="60" r="5" fill="#10B981"/>
-            <text x="60" y="55" fill="#10B981" font-size="10" font-weight="600" font-family="Inter">R$ 23.950</text>
-            <!-- Recovery -->
-            <circle cx="680" cy="85" r="4" fill="#10B981" opacity="0.5"/>
-            <text x="670" y="78" text-anchor="end" fill="#94A3B8" font-size="10" font-family="Inter">R$ 18.150</text>
-            <!-- Legend -->
-            <line x1="400" y1="15" x2="420" y2="15" stroke="#10B981" stroke-width="2.5"/>
-            <text x="424" y="19" fill="#94A3B8" font-size="10" font-family="Inter">Realizado</text>
-            <line x1="500" y1="15" x2="520" y2="15" stroke="#10B981" stroke-width="2" stroke-dasharray="6,4" opacity="0.7"/>
-            <text x="524" y="19" fill="#94A3B8" font-size="10" font-family="Inter">Projetado</text>
-            <rect x="604" y="10" width="12" height="8" fill="rgba(239,68,68,0.15)" rx="1"/>
-            <text x="620" y="19" fill="#94A3B8" font-size="10" font-family="Inter">Zona de risco</text>
-          </svg>
-        </div>
-
-        <div class="forecast-scenarios">
-          <h3>Cenários para os próximos 30 dias</h3>
-          <div class="scenario-row">
-            <div class="scenario-badge optimistic">Otimista</div>
-            <div class="scenario-info"><h4>Todos os recebíveis entram no prazo</h4><span>Inclui vendas projetadas de R$ 12.000 da campanha de Dia das Mães</span></div>
-            <div class="scenario-value" style="color: var(--accent);">R$ 28.150</div>
-          </div>
-          <div class="scenario-row">
-            <div class="scenario-badge realistic">Realista</div>
-            <div class="scenario-info"><h4>70% dos recebíveis confirmados + padrão histórico</h4><span>Gap temporário em 18/05 — recupera com recebíveis de cartão dia 20</span></div>
-            <div class="scenario-value" style="color: var(--blue);">R$ 18.150</div>
-          </div>
-          <div class="scenario-row">
-            <div class="scenario-badge pessimistic">Pessimista</div>
-            <div class="scenario-info"><h4>Atraso em recebíveis + venda abaixo do esperado</h4><span>Saldo negativo por 5 dias — necessário antecipar recebíveis ou renegociar fornecedor</span></div>
-            <div class="scenario-value" style="color: var(--danger);">- R$ 4.800</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===== VIEW: PAYABLES ===== -->
-      <div id="view-payables" class="dash-view">
-        <div class="payables-summary">
-          <div class="pay-summary-card pay-card">
-            <div class="ps-label">📤 A pagar (próx. 7 dias)</div>
-            <div class="ps-value" style="color: var(--danger);">R$ 18.700</div>
-            <div class="ps-count">5 contas · 2 urgentes</div>
-          </div>
-          <div class="pay-summary-card receive-card">
-            <div class="ps-label">📥 A receber (próx. 7 dias)</div>
-            <div class="ps-value" style="color: var(--accent);">R$ 14.230</div>
-            <div class="ps-count">4 recebíveis confirmados</div>
-          </div>
-          <div class="pay-summary-card net-card">
-            <div class="ps-label">📊 Saldo líquido previsto</div>
-            <div class="ps-value" style="color: var(--warning);">R$ 19.480</div>
-            <div class="ps-count">Saldo atual - a pagar + a receber</div>
-          </div>
-        </div>
-
-        <div class="week-calendar">
-          <h3>Calendário da semana — 28 Abr a 04 Mai</h3>
-          <div class="week-header">
-            <div></div>
-            <div class="week-header-day">Seg 28</div>
-            <div class="week-header-day">Ter 29</div>
-            <div class="week-header-day">Qua 30</div>
-            <div class="week-header-day today">Qui 01</div>
-            <div class="week-header-day">Sex 02</div>
-            <div class="week-header-day">Sáb 03</div>
-            <div class="week-header-day">Dom 04</div>
-          </div>
-          <div class="week-row">
-            <div class="week-row-label" style="color: var(--danger);">📤 Saídas</div>
-            <div class="week-cell"><div class="week-item expense">-R$ 2.800 DAS</div></div>
-            <div class="week-cell"></div>
-            <div class="week-cell"><div class="week-item expense">-R$ 5.800 Malhas SP</div></div>
-            <div class="week-cell today-col"><div class="week-item expense">-R$ 1.200 Internet</div></div>
-            <div class="week-cell has-danger"><div class="week-item expense">-R$ 4.500 Aluguel</div><div class="week-item expense">-R$ 4.400 Energia</div></div>
-            <div class="week-cell"></div>
-            <div class="week-cell"></div>
-          </div>
-          <div class="week-row">
-            <div class="week-row-label" style="color: var(--accent);">📥 Entradas</div>
-            <div class="week-cell"></div>
-            <div class="week-cell"><div class="week-item income">+R$ 3.240 Cielo</div></div>
-            <div class="week-cell"><div class="week-item income">+R$ 6.500 Cliente A</div></div>
-            <div class="week-cell today-col"><div class="week-item income">+R$ 1.890 Pix</div></div>
-            <div class="week-cell"><div class="week-item income">+R$ 2.600 Cartão</div></div>
-            <div class="week-cell"></div>
-            <div class="week-cell"></div>
-          </div>
-          <div class="saldo-bar">
-            <span class="saldo-label">Saldo projetado sexta-feira (02/05):</span>
-            <span class="saldo-result warning">R$ 17.060 ⚠️ abaixo da média</span>
-          </div>
-        </div>
-
-        <div class="payables-list-section">
-          <h3>Detalhamento</h3>
-          <div class="pay-tabs">
-            <button class="pay-tab active" onclick="switchPayTab('pagar', this)">A pagar</button>
-            <button class="pay-tab" onclick="switchPayTab('receber', this)">A receber</button>
-          </div>
-
-          <div id="tab-pagar">
-            <div class="pay-row">
-              <div class="pay-status overdue"></div>
-              <div class="pay-info"><h4>DAS — Simples Nacional</h4><span>Imposto mensal · Bradesco</span></div>
-              <div class="pay-amount expense">R$ 2.800,00</div>
-              <div class="pay-due overdue">Venceu 28/04</div>
-            </div>
-            <div class="pay-row">
-              <div class="pay-status due-soon"></div>
-              <div class="pay-info"><h4>Fornecedor — Malhas SP</h4><span>Lote #1247 · Bradesco</span></div>
-              <div class="pay-amount expense">R$ 5.800,00</div>
-              <div class="pay-due today">Hoje</div>
-            </div>
-            <div class="pay-row">
-              <div class="pay-status due-soon"></div>
-              <div class="pay-info"><h4>Internet + Telefone</h4><span>Vivo Empresas · Itaú</span></div>
-              <div class="pay-amount expense">R$ 1.200,00</div>
-              <div class="pay-due today">Hoje</div>
-            </div>
-            <div class="pay-row">
-              <div class="pay-status upcoming"></div>
-              <div class="pay-info"><h4>Aluguel — Loja Centro</h4><span>Mensal · Itaú</span></div>
-              <div class="pay-amount expense">R$ 4.500,00</div>
-              <div class="pay-due">02/05</div>
-            </div>
-            <div class="pay-row">
-              <div class="pay-status upcoming"></div>
-              <div class="pay-info"><h4>Energia elétrica</h4><span>CPFL · Bradesco</span></div>
-              <div class="pay-amount expense">R$ 4.400,00</div>
-              <div class="pay-due">02/05</div>
-            </div>
-            <div class="saldo-bar">
-              <span class="saldo-label">Total a pagar (7 dias):</span>
-              <span class="saldo-result danger">R$ 18.700,00</span>
-            </div>
-          </div>
-
-          <div id="tab-receber" style="display: none;">
-            <div class="pay-row">
-              <div class="pay-status received"></div>
-              <div class="pay-info"><h4>Venda cartão — Cielo</h4><span>Lote D+2 · Itaú</span></div>
-              <div class="pay-amount income">R$ 3.240,00</div>
-              <div class="pay-due">29/04</div>
-            </div>
-            <div class="pay-row">
-              <div class="pay-status received"></div>
-              <div class="pay-info"><h4>Cliente A — Pedido #892</h4><span>Boleto · Nubank</span></div>
-              <div class="pay-amount income">R$ 6.500,00</div>
-              <div class="pay-due">30/04</div>
-            </div>
-            <div class="pay-row">
-              <div class="pay-status due-soon"></div>
-              <div class="pay-info"><h4>Pix — Cliente recorrente</h4><span>Mensal · Nubank</span></div>
-              <div class="pay-amount income">R$ 1.890,00</div>
-              <div class="pay-due today">Hoje</div>
-            </div>
-            <div class="pay-row">
-              <div class="pay-status upcoming"></div>
-              <div class="pay-info"><h4>Venda cartão — Cielo</h4><span>Lote D+2 · Itaú</span></div>
-              <div class="pay-amount income">R$ 2.600,00</div>
-              <div class="pay-due">02/05</div>
-            </div>
-            <div class="saldo-bar">
-              <span class="saldo-label">Total a receber (7 dias):</span>
-              <span class="saldo-result ok">R$ 14.230,00</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <!-- All 3 views are populated dynamically by JS based on selected banks -->
+      <div id="view-dashboard" class="dash-view active"></div>
+      <div id="view-forecast" class="dash-view"></div>
+      <div id="view-payables" class="dash-view"></div>
 
     </div>
+  </div>
+</div>
+
+<!-- AI Chat FAB -->
+<button class="chat-fab hidden" id="chatFab" onclick="toggleChat()">
+  🤖
+  <div class="fab-badge">1</div>
+</button>
+
+<!-- AI Chat Panel -->
+<div class="chat-panel" id="chatPanel">
+  <div class="chat-header">
+    <div class="chat-avatar">🤖</div>
+    <div class="chat-header-info">
+      <h4>Tykhos IA</h4>
+      <span>Online agora</span>
+    </div>
+    <button class="chat-close" onclick="toggleChat()">✕</button>
+  </div>
+  <div class="chat-messages" id="chatMessages"></div>
+  <div class="chat-suggestions" id="chatSuggestions"></div>
+  <div class="chat-input-area">
+    <input type="text" class="chat-input" id="chatInput" placeholder="Pergunte sobre suas finanças..." onkeydown="if(event.key==='Enter')sendChat()">
+    <button class="chat-send" onclick="sendChat()">→</button>
   </div>
 </div>
 
@@ -912,24 +772,132 @@
   let consentQueue = [];
   let currentConsentIndex = 0;
 
+  // ===== MOCK DATA PER BANK =====
   const bankData = {
-    itau: { name: 'Itaú Empresas', logo: 'Itaú', color: '#003399' },
-    nubank: { name: 'Nubank PJ', logo: 'Nu', color: '#8A05BE' },
-    bradesco: { name: 'Bradesco Net Empresa', logo: 'B', color: '#CC092F' },
-    bb: { name: 'Banco do Brasil', logo: 'BB', color: '#003882' },
-    inter: { name: 'Inter Empresas', logo: 'inter', color: '#FF7A00' },
-    caixa: { name: 'Caixa Econômica', logo: 'CEF', color: '#005CA9' },
+    itau: {
+      name: 'Itaú Empresas', logo: 'Itaú', color: '#003399', barColor: 'var(--accent)',
+      account: 'Ag 1234 · CC 56789-0', balance: 12450, income: 18200, expense: 15300,
+      transactions: [
+        { desc: 'Venda cartão — Cielo', type: 'income', amount: 3240, time: 'Hoje, 14:32' },
+        { desc: 'Aluguel — Loja Centro', type: 'expense', amount: 4500, time: 'Ontem, 08:00' },
+        { desc: 'Folha de pagamento', type: 'expense', amount: 12400, time: '25/04, 07:00' },
+      ],
+      payables: [
+        { desc: 'Internet + Telefone', detail: 'Vivo Empresas', amount: 1200, status: 'due-soon', due: 'Hoje', dueClass: 'today' },
+        { desc: 'Aluguel — Loja Centro', detail: 'Mensal', amount: 4500, status: 'upcoming', due: '02/05', dueClass: '' },
+      ],
+      receivables: [
+        { desc: 'Venda cartão — Cielo', detail: 'Lote D+2', amount: 3240, status: 'received', due: '29/04', dueClass: '' },
+        { desc: 'Venda cartão — Cielo', detail: 'Lote D+2', amount: 2600, status: 'upcoming', due: '02/05', dueClass: '' },
+      ],
+    },
+    nubank: {
+      name: 'Nubank PJ', logo: 'Nu', color: '#8A05BE', barColor: 'var(--purple)',
+      account: 'Conta Digital', balance: 8320, income: 12500, expense: 8900,
+      transactions: [
+        { desc: 'Pix recebido — Cliente VIP', type: 'income', amount: 1890, time: 'Ontem, 16:45' },
+        { desc: 'Marketing — Instagram Ads', type: 'expense', amount: 2200, time: 'Hoje, 09:00' },
+      ],
+      payables: [
+        { desc: 'Marketing — Instagram Ads', detail: 'Meta Business', amount: 2200, status: 'due-soon', due: 'Hoje', dueClass: 'today' },
+      ],
+      receivables: [
+        { desc: 'Cliente A — Pedido #892', detail: 'Boleto', amount: 6500, status: 'received', due: '30/04', dueClass: '' },
+        { desc: 'Pix — Cliente recorrente', detail: 'Mensal', amount: 1890, status: 'due-soon', due: 'Hoje', dueClass: 'today' },
+      ],
+    },
+    bradesco: {
+      name: 'Bradesco Net Empresa', logo: 'B', color: '#CC092F', barColor: 'var(--danger)',
+      account: 'Ag 0567 · CC 12345-8', balance: 3180, income: 7800, expense: 9200,
+      transactions: [
+        { desc: 'Fornecedor — Malhas SP', type: 'expense', amount: 5800, time: 'Hoje, 11:15' },
+        { desc: 'DAS — Simples Nacional', type: 'expense', amount: 2800, time: '28/04, 06:00' },
+      ],
+      payables: [
+        { desc: 'DAS — Simples Nacional', detail: 'Imposto mensal', amount: 2800, status: 'overdue', due: 'Venceu 28/04', dueClass: 'overdue' },
+        { desc: 'Fornecedor — Malhas SP', detail: 'Lote #1247', amount: 5800, status: 'due-soon', due: 'Hoje', dueClass: 'today' },
+        { desc: 'Energia elétrica', detail: 'CPFL', amount: 4400, status: 'upcoming', due: '02/05', dueClass: '' },
+      ],
+      receivables: [
+        { desc: 'Devolução tributária', detail: 'ICMS', amount: 1450, status: 'upcoming', due: '05/05', dueClass: '' },
+      ],
+    },
+    bb: {
+      name: 'Banco do Brasil', logo: 'BB', color: '#003882', barColor: 'var(--blue)',
+      account: 'Ag 3456 · CC 78901-2', balance: 5620, income: 9400, expense: 7100,
+      transactions: [
+        { desc: 'Transferência recebida — Loja 2', type: 'income', amount: 4200, time: 'Hoje, 10:15' },
+        { desc: 'FGTS — Competência Abr', type: 'expense', amount: 3100, time: '27/04, 07:00' },
+      ],
+      payables: [
+        { desc: 'INSS — Folha', detail: 'Competência Abr', amount: 3800, status: 'upcoming', due: '03/05', dueClass: '' },
+        { desc: 'Seguro empresarial', detail: 'BB Seguros', amount: 1900, status: 'upcoming', due: '05/05', dueClass: '' },
+      ],
+      receivables: [
+        { desc: 'Transferência — Filial', detail: 'Loja 2', amount: 4200, status: 'received', due: '01/05', dueClass: '' },
+        { desc: 'Crédito antecipação', detail: 'Maquininha BB', amount: 3100, status: 'upcoming', due: '03/05', dueClass: '' },
+      ],
+    },
+    inter: {
+      name: 'Inter Empresas', logo: 'inter', color: '#FF7A00', barColor: '#FF7A00',
+      account: 'Conta Digital PJ', balance: 2100, income: 5600, expense: 4800,
+      transactions: [
+        { desc: 'Cashback — Inter Shop', type: 'income', amount: 320, time: 'Hoje, 12:00' },
+        { desc: 'Conta de água', type: 'expense', amount: 680, time: '29/04, 09:30' },
+      ],
+      payables: [
+        { desc: 'Conta de água', detail: 'SABESP', amount: 680, status: 'due-soon', due: 'Hoje', dueClass: 'today' },
+        { desc: 'Software — ERP', detail: 'Assinatura mensal', amount: 450, status: 'upcoming', due: '04/05', dueClass: '' },
+      ],
+      receivables: [
+        { desc: 'Venda marketplace', detail: 'Mercado Livre', amount: 2800, status: 'upcoming', due: '03/05', dueClass: '' },
+      ],
+    },
+    caixa: {
+      name: 'Caixa Econômica', logo: 'CEF', color: '#005CA9', barColor: '#005CA9',
+      account: 'Ag 0891 · CC 34567-1', balance: 4350, income: 6200, expense: 5100,
+      transactions: [
+        { desc: 'Crédito — Pronampe', type: 'income', amount: 5000, time: '26/04, 14:00' },
+        { desc: 'Parcela empréstimo', type: 'expense', amount: 2300, time: '25/04, 08:00' },
+      ],
+      payables: [
+        { desc: 'Parcela empréstimo', detail: 'Pronampe 18/36', amount: 2300, status: 'upcoming', due: '05/05', dueClass: '' },
+      ],
+      receivables: [
+        { desc: 'Restituição IR', detail: 'Receita Federal', amount: 3200, status: 'upcoming', due: '06/05', dueClass: '' },
+      ],
+    },
   };
 
+  const fmt = v => 'R$ ' + Math.abs(v).toLocaleString('pt-BR');
+
+  // ===== NAVIGATION =====
   function goTo(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
     window.scrollTo(0, 0);
+    if (id === 'screen-dashboard') populateAllViews();
+  }
+
+  function getInitials(name) {
+    if (!name) return '--';
+    const p = name.trim().split(/\s+/);
+    return p.length >= 2 ? (p[0][0] + p[p.length-1][0]).toUpperCase() : p[0].substring(0,2).toUpperCase();
+  }
+
+  function getGreeting() {
+    const h = new Date().getHours();
+    return h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
   }
 
   function saveProfile() {
-    const name = document.getElementById('companyName').value || 'Minha Empresa';
-    document.getElementById('dashSubtitle').textContent = name + ' · Atualizado há 5 minutos';
+    const userName = document.getElementById('userName').value.trim();
+    const companyName = document.getElementById('companyName').value.trim() || 'Minha Empresa';
+    const firstName = userName ? userName.split(/\s+/)[0] : '';
+    const g = getGreeting();
+    document.getElementById('dashGreeting').textContent = firstName ? g + ', ' + firstName + ' 👋' : g + ' 👋';
+    document.getElementById('dashSubtitle').textContent = companyName + ' · Atualizado há 5 minutos';
+    document.getElementById('avatarInitials').textContent = getInitials(userName);
     goTo('screen-connect');
   }
 
@@ -939,13 +907,10 @@
     else { selectedBanks.push(bankId); card.classList.add('selected'); }
     const btn = document.getElementById('btnConnect');
     const count = document.getElementById('connectCount');
-    if (selectedBanks.length > 0) {
-      btn.disabled = false;
-      count.textContent = selectedBanks.length + (selectedBanks.length === 1 ? ' banco selecionado' : ' bancos selecionados');
-    } else {
-      btn.disabled = true;
-      count.textContent = 'Selecione pelo menos 1 banco para continuar';
-    }
+    btn.disabled = selectedBanks.length === 0;
+    count.textContent = selectedBanks.length > 0
+      ? selectedBanks.length + (selectedBanks.length === 1 ? ' banco selecionado' : ' bancos selecionados')
+      : 'Selecione pelo menos 1 banco para continuar';
   }
 
   function startConsent() { consentQueue = [...selectedBanks]; currentConsentIndex = 0; showConsent(); }
@@ -954,8 +919,7 @@
     if (currentConsentIndex >= consentQueue.length) { startConnecting(); return; }
     const bank = bankData[consentQueue[currentConsentIndex]];
     const logo = document.getElementById('consentBankLogo');
-    logo.textContent = bank.logo;
-    logo.style.background = bank.color;
+    logo.textContent = bank.logo; logo.style.background = bank.color;
     logo.style.color = bank.color === '#FFEF00' ? '#003882' : 'white';
     document.getElementById('consentBankName').textContent = 'O ' + bank.name + ' compartilhará seus dados com a Tykhos via Open Finance';
     goTo('screen-consent');
@@ -964,24 +928,305 @@
   function authorizeBank() { currentConsentIndex++; showConsent(); }
 
   function startConnecting() {
-    goTo('screen-connecting');
-    const c = document.getElementById('connectingBanks');
-    c.innerHTML = '';
-    consentQueue.forEach((id) => {
-      const b = bankData[id];
-      const d = document.createElement('div');
-      d.className = 'connecting-bank-item';
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-connecting').classList.add('active');
+    const c = document.getElementById('connectingBanks'); c.innerHTML = '';
+    consentQueue.forEach(id => {
+      const b = bankData[id], d = document.createElement('div'); d.className = 'connecting-bank-item';
       d.innerHTML = `<div style="width:32px;height:32px;border-radius:8px;background:${b.color};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:${b.color==='#FFEF00'?'#003882':'white'};flex-shrink:0;">${b.logo}</div><span>${b.name}</span><div class="status-dot" id="dot-${id}"></div>`;
       c.appendChild(d);
     });
     consentQueue.forEach((id, i) => {
-      setTimeout(() => document.getElementById('dot-' + id).classList.add('loading'), i * 800);
-      setTimeout(() => { const d = document.getElementById('dot-' + id); d.classList.remove('loading'); d.classList.add('done'); }, i * 800 + 1200);
+      setTimeout(() => document.getElementById('dot-'+id).classList.add('loading'), i*800);
+      setTimeout(() => { const d = document.getElementById('dot-'+id); d.classList.remove('loading'); d.classList.add('done'); }, i*800+1200);
     });
     setTimeout(() => {
       document.getElementById('successMsg').textContent = consentQueue.length + (consentQueue.length === 1 ? ' conta sincronizada com sucesso' : ' contas sincronizadas com sucesso');
-      goTo('screen-success');
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById('screen-success').classList.add('active');
     }, consentQueue.length * 800 + 1800);
+  }
+
+  // ===== POPULATE ALL VIEWS DYNAMICALLY =====
+  function populateAllViews() {
+    const banks = selectedBanks.map(id => ({ id, ...bankData[id] }));
+    const totalBalance = banks.reduce((s, b) => s + b.balance, 0);
+    const totalIncome = banks.reduce((s, b) => s + b.income, 0);
+    const totalExpense = banks.reduce((s, b) => s + b.expense, 0);
+    const maxBal = Math.max(...banks.map(b => b.balance));
+    const allTx = banks.flatMap(b => b.transactions.map(t => ({ ...t, bank: b.name })));
+    const allPay = banks.flatMap(b => b.payables.map(p => ({ ...p, bank: b.name })));
+    const allRec = banks.flatMap(b => b.receivables.map(r => ({ ...r, bank: b.name })));
+    const totalPay = allPay.reduce((s, p) => s + p.amount, 0);
+    const totalRec = allRec.reduce((s, r) => s + r.amount, 0);
+    const urgentCount = allPay.filter(p => p.status === 'overdue' || p.status === 'due-soon').length;
+    const netBalance = totalBalance - totalPay + totalRec;
+    const forecastMin = Math.round(totalBalance - totalExpense * 0.6);
+    const forecastEntradas = Math.round(totalIncome * 0.7);
+    const forecastSaidas = Math.round(totalExpense * 0.85);
+
+    // ===== DASHBOARD VIEW =====
+    const lowestBank = banks.reduce((a, b) => a.balance < b.balance ? a : b);
+    const highestBank = banks.reduce((a, b) => a.balance > b.balance ? a : b);
+    let alertsHTML = `<div class="alert-item"><div class="alert-icon warning">⚠️</div><div><strong>Gap de caixa previsto</strong><br>Em 12 dias o saldo pode ficar negativo se os recebíveis de maio não entrarem.<div class="alert-time">Previsão · Hoje</div></div></div>`;
+    if (lowestBank.balance < 5000) alertsHTML += `<div class="alert-item"><div class="alert-icon danger">🔴</div><div><strong>Conta ${lowestBank.name} baixa</strong><br>Saldo de ${fmt(lowestBank.balance)} — boletos vencem esta semana.<div class="alert-time">Urgente · Há 2h</div></div></div>`;
+    if (banks.length > 1) alertsHTML += `<div class="alert-item"><div class="alert-icon info">💡</div><div><strong>Oportunidade</strong><br>${fmt(highestBank.balance)} no ${highestBank.name}. Considere antecipar fornecedores com desconto.<div class="alert-time">Sugestão · Hoje</div></div></div>`;
+
+    // Generate AI insights based on actual data
+    const margin = totalIncome - totalExpense;
+    const marginPct = Math.round((margin / totalIncome) * 100);
+    let insights = [];
+    if (urgentCount > 0) insights.push({ icon: '⚠️', text: `Você tem <strong>${urgentCount} ${urgentCount===1?'conta vencida ou vencendo':'contas vencidas ou vencendo'} hoje</strong>, totalizando ${fmt(allPay.filter(p=>p.status==='overdue'||p.status==='due-soon').reduce((s,p)=>s+p.amount,0))}. Priorize para evitar juros e multas.`, tag: 'alert', tagLabel: 'Ação necessária' });
+    if (banks.length > 1 && lowestBank.balance < totalBalance * 0.15) insights.push({ icon: '🔄', text: `Sua conta no <strong>${lowestBank.name}</strong> tem apenas ${fmt(lowestBank.balance)} (${Math.round(lowestBank.balance/totalBalance*100)}% do total). Considere redistribuir saldo do <strong>${highestBank.name}</strong> para cobrir vencimentos.`, tag: 'tip', tagLabel: 'Sugestão IA' });
+    if (marginPct < 15) insights.push({ icon: '📉', text: `Sua margem de caixa este mês é de apenas <strong>${marginPct}%</strong> (${fmt(margin)} de sobra). Meses saudáveis costumam ter margem acima de 20%. Analise as saídas recorrentes.`, tag: 'alert', tagLabel: 'Atenção' });
+    else insights.push({ icon: '✅', text: `Sua margem de caixa este mês está em <strong>${marginPct}%</strong> — isso significa ${fmt(margin)} de sobra depois de todas as saídas. Bom mês para reforçar a reserva.`, tag: 'good', tagLabel: 'Saudável' });
+    if (forecastMin < 0) insights.push({ icon: '🔮', text: `A projeção indica saldo <strong>negativo de ${fmt(forecastMin)}</strong> em 18/05. Antecipe recebíveis de cartão ou negocie prazos com fornecedores antes que vire crise.`, tag: 'alert', tagLabel: 'Previsão IA' });
+
+    // Store data for chat
+    window._tykhos = { banks, totalBalance, totalIncome, totalExpense, margin, marginPct, allTx, allPay, allRec, totalPay, totalRec, lowestBank, highestBank, forecastMin, netBalance, urgentCount };
+
+    document.getElementById('view-dashboard').innerHTML = `
+      <div class="ai-insights">
+        <div class="ai-insights-header"><span class="ai-badge">✨ IA</span><span>Análise inteligente das suas finanças</span></div>
+        <div class="insights-grid">${insights.map(i => `
+          <div class="insight-card">
+            <div class="insight-icon">${i.icon}</div>
+            <div class="insight-text">${i.text}</div>
+            <span class="insight-tag ${i.tag}">${i.tagLabel}</span>
+          </div>`).join('')}
+        </div>
+      </div>
+      <div class="stat-cards">
+        <div class="stat-card highlight"><div class="stat-label">🏦 Saldo consolidado</div><div class="stat-value">${fmt(totalBalance)}</div><div class="stat-change positive">↑ 12% vs mês anterior</div></div>
+        <div class="stat-card"><div class="stat-label">📥 Entradas (mês)</div><div class="stat-value">${fmt(totalIncome)}</div><div class="stat-change positive">↑ 8% vs mês anterior</div></div>
+        <div class="stat-card"><div class="stat-label">📤 Saídas (mês)</div><div class="stat-value">${fmt(totalExpense)}</div><div class="stat-change negative">↑ 3% vs mês anterior</div></div>
+      </div>
+      <div class="section-title">Contas conectadas<span class="badge">${banks.length} ${banks.length===1?'banco':'bancos'} · Open Finance</span></div>
+      <div class="accounts-list">${banks.map(b => `
+        <div class="account-row">
+          <div class="account-logo" style="background:${b.color};${b.color==='#FFEF00'?'color:#003882;':''}">${b.logo}</div>
+          <div class="account-info"><h4>${b.name}</h4><span>${b.account}</span></div>
+          <div class="account-bar-container"><div class="account-bar" style="width:${Math.round(b.balance/maxBal*100)}%;background:${b.barColor};"></div></div>
+          <div class="account-balance"><div class="amount">${fmt(b.balance)}</div><div class="updated">Atualizado agora</div></div>
+        </div>`).join('')}
+      </div>
+      <div class="chart-section">
+        <div class="chart-card">
+          <h3>Fluxo de caixa — Últimas 4 semanas</h3>
+          <div class="cashflow-chart" id="cashflowChart"></div>
+          <div class="chart-legend" style="margin-top:8px;">
+            <div class="chart-legend-item"><div class="chart-legend-dot" style="background:var(--accent);"></div> Entradas</div>
+            <div class="chart-legend-item"><div class="chart-legend-dot" style="background:var(--danger);opacity:0.7;"></div> Saídas</div>
+            <div class="chart-legend-item"><div class="chart-legend-dot" style="background:#3B82F6;border-radius:50%;"></div> Saldo</div>
+            <div class="chart-legend-item"><div class="chart-legend-dot" style="background:transparent;border:1px dashed var(--warning);"></div> Mínimo seguro</div>
+          </div>
+        </div>
+        <div class="chart-card"><h3>⚠️ Alertas</h3><div class="alerts-list">${alertsHTML}</div></div>
+      </div>
+      <div class="transactions-card">
+        <h3 style="font-size:15px;font-weight:600;margin-bottom:16px;">Últimas transações</h3>
+        ${allTx.map(t => `<div class="tx-row"><div class="tx-icon ${t.type}">${t.type==='income'?'📥':'📤'}</div><div class="tx-info"><h4>${t.desc}</h4><span>${t.bank} · ${t.time}</span></div><div class="tx-amount ${t.type}">${t.type==='income'?'+ ':'- '}${fmt(t.amount)}</div></div>`).join('')}
+      </div>`;
+
+    // Build the cashflow chart after innerHTML is set
+    buildCashflowChart(totalBalance, totalIncome, totalExpense);
+    showChatFab();
+
+    // ===== FORECAST VIEW =====
+    document.getElementById('view-forecast').innerHTML = `
+      <div class="forecast-stats">
+        <div class="forecast-stat ok-stat"><div class="fs-label">Saldo atual</div><div class="fs-value">${fmt(totalBalance)}</div><div class="fs-sub">Consolidado ${banks.length} ${banks.length===1?'banco':'bancos'}</div></div>
+        <div class="forecast-stat"><div class="fs-label">Entradas previstas</div><div class="fs-value" style="color:var(--accent);">${fmt(forecastEntradas)}</div><div class="fs-sub">Próximos 30 dias</div></div>
+        <div class="forecast-stat"><div class="fs-label">Saídas previstas</div><div class="fs-value" style="color:var(--danger);">${fmt(forecastSaidas)}</div><div class="fs-sub">Próximos 30 dias</div></div>
+        <div class="forecast-stat ${forecastMin < 0 ? 'danger-stat' : ''}"><div class="fs-label">${forecastMin < 0 ? '⚠️ ' : ''}Saldo mínimo previsto</div><div class="fs-value">${forecastMin < 0 ? '- ' : ''}${fmt(forecastMin)}</div><div class="fs-sub">Em 18 de maio</div></div>
+      </div>
+      <div class="forecast-chart-container">
+        <h3>Projeção de saldo — Próximos 30 dias</h3>
+        <p class="forecast-sub">Baseado em contas a pagar, recebíveis confirmados e padrões históricos</p>
+        <svg class="forecast-svg" viewBox="0 0 700 250" xmlns="http://www.w3.org/2000/svg">
+          <line x1="50" y1="30" x2="50" y2="210" stroke="#1E293B" stroke-width="1"/>
+          <line x1="50" y1="210" x2="680" y2="210" stroke="#1E293B" stroke-width="1"/>
+          <line x1="50" y1="70" x2="680" y2="70" stroke="#1E293B" stroke-width="0.5" stroke-dasharray="4"/>
+          <line x1="50" y1="110" x2="680" y2="110" stroke="#1E293B" stroke-width="0.5" stroke-dasharray="4"/>
+          <line x1="50" y1="150" x2="680" y2="150" stroke="#1E293B" stroke-width="0.5" stroke-dasharray="4"/>
+          <line x1="50" y1="180" x2="680" y2="180" stroke="#EF4444" stroke-width="1" stroke-dasharray="6,3" opacity="0.5"/>
+          <text x="46" y="184" text-anchor="end" fill="#EF4444" font-size="10" font-family="Inter" opacity="0.7">R$ 0</text>
+          <rect x="50" y="180" width="630" height="30" fill="rgba(239,68,68,0.06)"/>
+          <text x="46" y="34" text-anchor="end" fill="#64748B" font-size="10" font-family="Inter">${fmt(Math.round(totalBalance*1.5))}</text>
+          <text x="46" y="74" text-anchor="end" fill="#64748B" font-size="10" font-family="Inter">${fmt(Math.round(totalBalance))}</text>
+          <text x="46" y="114" text-anchor="end" fill="#64748B" font-size="10" font-family="Inter">${fmt(Math.round(totalBalance*0.6))}</text>
+          <text x="46" y="154" text-anchor="end" fill="#64748B" font-size="10" font-family="Inter">${fmt(Math.round(totalBalance*0.2))}</text>
+          <text x="50" y="228" fill="#64748B" font-size="10" font-family="Inter">01/05</text>
+          <text x="176" y="228" fill="#64748B" font-size="10" font-family="Inter">07/05</text>
+          <text x="302" y="228" fill="#64748B" font-size="10" font-family="Inter">14/05</text>
+          <text x="428" y="228" fill="#EF4444" font-size="10" font-family="Inter" font-weight="600">18/05</text>
+          <text x="554" y="228" fill="#64748B" font-size="10" font-family="Inter">25/05</text>
+          <text x="650" y="228" fill="#64748B" font-size="10" font-family="Inter">31/05</text>
+          <polyline points="50,60 92,65 134,58 176,72 218,85 260,95 302,110" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <polyline points="302,110 344,125 386,142 408,160 428,${forecastMin<0?'190':'165'} 450,175 470,158 492,140 534,130 576,115 618,100 660,90 680,85" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6,4" opacity="0.7"/>
+          ${forecastMin<0?`<circle cx="428" cy="190" r="6" fill="#0B1120" stroke="#EF4444" stroke-width="2"/><text x="428" y="205" text-anchor="middle" fill="#EF4444" font-size="10" font-weight="600" font-family="Inter">- ${fmt(forecastMin)}</text>`:''}
+          <circle cx="50" cy="60" r="5" fill="#10B981"/><text x="60" y="55" fill="#10B981" font-size="10" font-weight="600" font-family="Inter">${fmt(totalBalance)}</text>
+          <line x1="400" y1="15" x2="420" y2="15" stroke="#10B981" stroke-width="2.5"/><text x="424" y="19" fill="#94A3B8" font-size="10" font-family="Inter">Realizado</text>
+          <line x1="500" y1="15" x2="520" y2="15" stroke="#10B981" stroke-width="2" stroke-dasharray="6,4" opacity="0.7"/><text x="524" y="19" fill="#94A3B8" font-size="10" font-family="Inter">Projetado</text>
+          <rect x="604" y="10" width="12" height="8" fill="rgba(239,68,68,0.15)" rx="1"/><text x="620" y="19" fill="#94A3B8" font-size="10" font-family="Inter">Zona de risco</text>
+        </svg>
+      </div>
+      <div class="forecast-scenarios">
+        <h3>Cenários para os próximos 30 dias</h3>
+        <div class="scenario-row"><div class="scenario-badge optimistic">Otimista</div><div class="scenario-info"><h4>Todos os recebíveis entram no prazo</h4><span>Inclui vendas projetadas da campanha de Dia das Mães</span></div><div class="scenario-value" style="color:var(--accent);">${fmt(Math.round(totalBalance + forecastEntradas*1.2 - forecastSaidas))}</div></div>
+        <div class="scenario-row"><div class="scenario-badge realistic">Realista</div><div class="scenario-info"><h4>70% dos recebíveis + padrão histórico</h4><span>Gap temporário em 18/05 — recupera com recebíveis de cartão dia 20</span></div><div class="scenario-value" style="color:var(--blue);">${fmt(Math.round(totalBalance + forecastEntradas - forecastSaidas))}</div></div>
+        <div class="scenario-row"><div class="scenario-badge pessimistic">Pessimista</div><div class="scenario-info"><h4>Atraso em recebíveis + venda abaixo do esperado</h4><span>Necessário antecipar recebíveis ou renegociar fornecedor</span></div><div class="scenario-value" style="color:var(--danger);">${forecastMin < 0 ? '- ' : ''}${fmt(forecastMin)}</div></div>
+      </div>`;
+
+    // ===== PAYABLES VIEW =====
+    document.getElementById('view-payables').innerHTML = `
+      <div class="payables-summary">
+        <div class="pay-summary-card pay-card"><div class="ps-label">📤 A pagar (próx. 7 dias)</div><div class="ps-value" style="color:var(--danger);">${fmt(totalPay)}</div><div class="ps-count">${allPay.length} contas · ${urgentCount} urgente${urgentCount!==1?'s':''}</div></div>
+        <div class="pay-summary-card receive-card"><div class="ps-label">📥 A receber (próx. 7 dias)</div><div class="ps-value" style="color:var(--accent);">${fmt(totalRec)}</div><div class="ps-count">${allRec.length} recebíveis</div></div>
+        <div class="pay-summary-card net-card"><div class="ps-label">📊 Saldo líquido previsto</div><div class="ps-value" style="color:${netBalance>totalBalance*0.5?'var(--accent)':netBalance>0?'var(--warning)':'var(--danger)'};">${fmt(netBalance)}</div><div class="ps-count">Saldo atual - a pagar + a receber</div></div>
+      </div>
+      <div class="payables-list-section">
+        <h3>Detalhamento</h3>
+        <div class="pay-tabs">
+          <button class="pay-tab active" onclick="switchPayTab('pagar',this)">A pagar (${allPay.length})</button>
+          <button class="pay-tab" onclick="switchPayTab('receber',this)">A receber (${allRec.length})</button>
+        </div>
+        <div id="tab-pagar">
+          ${allPay.map(p => `<div class="pay-row"><div class="pay-status ${p.status}"></div><div class="pay-info"><h4>${p.desc}</h4><span>${p.detail} · ${p.bank}</span></div><div class="pay-amount expense">${fmt(p.amount)}</div><div class="pay-due ${p.dueClass}">${p.due}</div></div>`).join('')}
+          <div class="saldo-bar"><span class="saldo-label">Total a pagar (7 dias):</span><span class="saldo-result danger">${fmt(totalPay)}</span></div>
+        </div>
+        <div id="tab-receber" style="display:none;">
+          ${allRec.map(r => `<div class="pay-row"><div class="pay-status ${r.status}"></div><div class="pay-info"><h4>${r.desc}</h4><span>${r.detail} · ${r.bank}</span></div><div class="pay-amount income">${fmt(r.amount)}</div><div class="pay-due ${r.dueClass}">${r.due}</div></div>`).join('')}
+          <div class="saldo-bar"><span class="saldo-label">Total a receber (7 dias):</span><span class="saldo-result ok">${fmt(totalRec)}</span></div>
+        </div>
+      </div>`;
+  }
+
+  // ===== CASHFLOW CHART BUILDER =====
+  function buildCashflowChart(totalBalance, totalIncome, totalExpense) {
+    const container = document.getElementById('cashflowChart');
+    if (!container) return;
+
+    // Generate 4 weeks of mock data scaled to selected banks
+    const scale = totalIncome / 48000;
+    const weeks = [
+      { label: 'Sem 1 (07-13 Abr)', income: Math.round(9800*scale), expense: Math.round(8200*scale) },
+      { label: 'Sem 2 (14-20 Abr)', income: Math.round(11500*scale), expense: Math.round(13100*scale) },
+      { label: 'Sem 3 (21-27 Abr)', income: Math.round(14200*scale), expense: Math.round(10800*scale) },
+      { label: 'Sem 4 (28 Abr-04 Mai)', income: Math.round(13220*scale), expense: Math.round(9250*scale) },
+    ];
+
+    // Calculate running balance per week
+    let runBal = totalBalance - weeks.reduce((s,w) => s + w.income - w.expense, 0);
+    weeks.forEach(w => { runBal += w.income - w.expense; w.balance = runBal; });
+
+    const safeMin = Math.round(totalBalance * 0.25); // 25% of current balance as "safe minimum"
+    const maxVal = Math.max(...weeks.map(w => Math.max(w.income, w.expense, w.balance)), safeMin) * 1.15;
+
+    // Chart dimensions
+    const W = 520, H = 210, padL = 55, padR = 15, padT = 15, padB = 35;
+    const chartW = W - padL - padR, chartH = H - padT - padB;
+    const barGroupW = chartW / weeks.length;
+    const barW = 22;
+    const toY = v => padT + chartH - (v / maxVal * chartH);
+
+    // Build SVG
+    let svg = `<svg class="cashflow-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+
+    // Grid lines
+    const gridSteps = 4;
+    for (let i = 0; i <= gridSteps; i++) {
+      const y = padT + (chartH / gridSteps) * i;
+      const val = Math.round(maxVal - (maxVal / gridSteps) * i);
+      svg += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#1E293B" stroke-width="0.5" ${i>0?'stroke-dasharray="4"':''}/>`;
+      svg += `<text x="${padL-6}" y="${y+4}" text-anchor="end" fill="#64748B" font-size="9" font-family="Inter">${val>=1000?(val/1000).toFixed(val%1000===0?0:1)+'k':val}</text>`;
+    }
+
+    // Safe minimum line
+    const safeY = toY(safeMin);
+    svg += `<line x1="${padL}" y1="${safeY}" x2="${W-padR}" y2="${safeY}" stroke="#F59E0B" stroke-width="1" stroke-dasharray="5,4" opacity="0.6"/>`;
+    svg += `<text x="${W-padR+2}" y="${safeY+3}" fill="#F59E0B" font-size="8" font-family="Inter" opacity="0.7">min</text>`;
+
+    // Bars + labels
+    weeks.forEach((w, i) => {
+      const cx = padL + barGroupW * i + barGroupW / 2;
+      const x1 = cx - barW - 1.5;
+      const x2 = cx + 1.5;
+      const incH = (w.income / maxVal) * chartH;
+      const expH = (w.expense / maxVal) * chartH;
+
+      // Income bar
+      svg += `<rect x="${x1}" y="${padT + chartH - incH}" width="${barW}" height="${incH}" rx="3" fill="#10B981" opacity="0.85">
+        <animate attributeName="height" from="0" to="${incH}" dur="0.6s" fill="freeze"/>
+        <animate attributeName="y" from="${padT+chartH}" to="${padT+chartH-incH}" dur="0.6s" fill="freeze"/>
+      </rect>`;
+
+      // Expense bar
+      svg += `<rect x="${x2}" y="${padT + chartH - expH}" width="${barW}" height="${expH}" rx="3" fill="#EF4444" opacity="0.6">
+        <animate attributeName="height" from="0" to="${expH}" dur="0.6s" fill="freeze"/>
+        <animate attributeName="y" from="${padT+chartH}" to="${padT+chartH-expH}" dur="0.6s" fill="freeze"/>
+      </rect>`;
+
+      // Week label
+      const shortLabel = 'Sem ' + (i+1);
+      svg += `<text x="${cx}" y="${H-8}" text-anchor="middle" fill="#64748B" font-size="10" font-family="Inter">${shortLabel}</text>`;
+
+      // Hover area (invisible rect for interaction)
+      svg += `<rect x="${padL + barGroupW*i}" y="${padT}" width="${barGroupW}" height="${chartH+padB}" fill="transparent" class="chart-hover-area" data-week="${i}" style="cursor:pointer;"/>`;
+    });
+
+    // Balance line (polyline connecting week centers)
+    const balPoints = weeks.map((w, i) => {
+      const cx = padL + barGroupW * i + barGroupW / 2;
+      return `${cx},${toY(w.balance)}`;
+    }).join(' ');
+    svg += `<polyline points="${balPoints}" fill="none" stroke="#3B82F6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>`;
+
+    // Balance dots
+    weeks.forEach((w, i) => {
+      const cx = padL + barGroupW * i + barGroupW / 2;
+      const cy = toY(w.balance);
+      const dotColor = w.balance < safeMin ? '#EF4444' : '#3B82F6';
+      svg += `<circle cx="${cx}" cy="${cy}" r="5" fill="#0B1120" stroke="${dotColor}" stroke-width="2.5"/>`;
+      // Value label above dot
+      svg += `<text x="${cx}" y="${cy-10}" text-anchor="middle" fill="${dotColor}" font-size="9" font-weight="600" font-family="Inter">${fmt(w.balance)}</text>`;
+    });
+
+    svg += `</svg>`;
+
+    // Tooltip div
+    svg += `<div class="chart-tooltip" id="chartTooltip"></div>`;
+
+    container.innerHTML = svg;
+
+    // Add hover interactions
+    const tooltip = document.getElementById('chartTooltip');
+    const hoverAreas = container.querySelectorAll('.chart-hover-area');
+    hoverAreas.forEach(area => {
+      area.addEventListener('mouseenter', (e) => {
+        const wi = parseInt(area.dataset.week);
+        const w = weeks[wi];
+        const net = w.income - w.expense;
+        tooltip.innerHTML = `
+          <div class="tt-week">${w.label}</div>
+          <div class="tt-row"><span class="tt-label">Entradas</span><span class="tt-val income">+ ${fmt(w.income)}</span></div>
+          <div class="tt-row"><span class="tt-label">Saídas</span><span class="tt-val expense">- ${fmt(w.expense)}</span></div>
+          <div class="tt-divider"></div>
+          <div class="tt-row"><span class="tt-label">Resultado</span><span class="tt-val" style="color:${net>=0?'var(--accent)':'var(--danger)'}">${net>=0?'+':''}${fmt(net)}</span></div>
+          <div class="tt-row"><span class="tt-label">Saldo final</span><span class="tt-val balance">${fmt(w.balance)}</span></div>
+          ${w.balance < safeMin ? '<div style="margin-top:6px;padding:4px 8px;background:rgba(239,68,68,0.1);border-radius:4px;color:#f87171;font-size:11px;">⚠️ Abaixo do mínimo seguro</div>' : ''}
+        `;
+        tooltip.classList.add('visible');
+      });
+      area.addEventListener('mousemove', (e) => {
+        const rect = container.getBoundingClientRect();
+        let left = e.clientX - rect.left + 12;
+        if (left + 180 > rect.width) left = e.clientX - rect.left - 180;
+        tooltip.style.left = left + 'px';
+        tooltip.style.top = (e.clientY - rect.top - 60) + 'px';
+      });
+      area.addEventListener('mouseleave', () => { tooltip.classList.remove('visible'); });
+    });
   }
 
   function switchView(viewName, el) {
@@ -989,11 +1234,12 @@
     document.getElementById('view-' + viewName).classList.add('active');
     document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
     if (el) el.classList.add('active');
-
-    const header = document.querySelector('.main-header h1');
-    const sub = document.querySelector('.main-header p');
-    const name = document.getElementById('companyName')?.value || 'Bella Moda Boutique';
-    if (viewName === 'dashboard') { header.textContent = 'Bom dia, Guilherme 👋'; sub.textContent = name + ' · Atualizado há 5 minutos'; }
+    const header = document.querySelector('.main-header h1'), sub = document.querySelector('.main-header p');
+    const companyName = document.getElementById('companyName')?.value?.trim() || 'Minha Empresa';
+    const userName = document.getElementById('userName')?.value?.trim() || '';
+    const firstName = userName ? userName.split(/\s+/)[0] : '';
+    const g = getGreeting();
+    if (viewName === 'dashboard') { header.textContent = firstName ? g+', '+firstName+' 👋' : g+' 👋'; sub.textContent = companyName + ' · Atualizado há 5 minutos'; }
     else if (viewName === 'forecast') { header.textContent = '🔮 Previsão de caixa'; sub.textContent = 'Projeção dos próximos 30 dias baseada em dados reais'; }
     else if (viewName === 'payables') { header.textContent = '📋 Contas a pagar e receber'; sub.textContent = 'Visão semanal de vencimentos e recebíveis'; }
   }
@@ -1003,6 +1249,226 @@
     el.classList.add('active');
     document.getElementById('tab-pagar').style.display = tab === 'pagar' ? 'block' : 'none';
     document.getElementById('tab-receber').style.display = tab === 'receber' ? 'block' : 'none';
+  }
+
+  // ===== AI CHAT =====
+  let chatOpen = false;
+  let chatInitialized = false;
+
+  function toggleChat() {
+    chatOpen = !chatOpen;
+    document.getElementById('chatPanel').classList.toggle('open', chatOpen);
+    document.getElementById('chatFab').classList.toggle('hidden', chatOpen);
+    if (!chatInitialized) { initChat(); chatInitialized = true; }
+  }
+
+  function showChatFab() {
+    document.getElementById('chatFab').classList.remove('hidden');
+  }
+
+  function initChat() {
+    const msgs = document.getElementById('chatMessages');
+    const d = window._tykhos;
+    const userName = document.getElementById('userName')?.value?.trim().split(/\s+/)[0] || '';
+    const greeting = userName ? `Olá, ${userName}! ` : 'Olá! ';
+    addBotMsg(greeting + `Sou a <strong>Tykhos IA</strong>, sua assistente financeira. Analisei suas ${d.banks.length} contas e já tenho algumas observações. Pergunte o que quiser!`);
+    setSuggestions(['Quanto tenho no total?', 'Vou conseguir pagar as contas?', 'Onde estou gastando mais?', 'Resuma minha semana']);
+  }
+
+  function addBotMsg(html) {
+    const msgs = document.getElementById('chatMessages');
+    const div = document.createElement('div');
+    div.className = 'chat-msg bot';
+    div.innerHTML = `<div class="msg-label">🤖 Tykhos IA</div>${html}`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function addUserMsg(text) {
+    const msgs = document.getElementById('chatMessages');
+    const div = document.createElement('div');
+    div.className = 'chat-msg user';
+    div.innerHTML = `<div class="msg-label">Você</div>${text}`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function showTyping() {
+    const msgs = document.getElementById('chatMessages');
+    const div = document.createElement('div');
+    div.className = 'chat-typing';
+    div.id = 'typingIndicator';
+    div.innerHTML = '<span></span><span></span><span></span>';
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function hideTyping() {
+    const el = document.getElementById('typingIndicator');
+    if (el) el.remove();
+  }
+
+  function setSuggestions(suggestions) {
+    const container = document.getElementById('chatSuggestions');
+    container.innerHTML = suggestions.map(s => `<button class="chat-suggestion" onclick="askSuggestion('${s.replace(/'/g,"\\'")}')">${s}</button>`).join('');
+  }
+
+  function askSuggestion(text) {
+    document.getElementById('chatInput').value = '';
+    addUserMsg(text);
+    document.getElementById('chatSuggestions').innerHTML = '';
+    processQuestion(text);
+  }
+
+  function sendChat() {
+    const input = document.getElementById('chatInput');
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    addUserMsg(text);
+    document.getElementById('chatSuggestions').innerHTML = '';
+    processQuestion(text);
+  }
+
+  function processQuestion(q) {
+    showTyping();
+    const delay = 600 + Math.random() * 800;
+    setTimeout(() => {
+      hideTyping();
+      const answer = getAnswer(q.toLowerCase());
+      addBotMsg(answer.text);
+      if (answer.suggestions) setSuggestions(answer.suggestions);
+    }, delay);
+  }
+
+  function getAnswer(q) {
+    const d = window._tykhos;
+    if (!d) return { text: 'Ainda estou carregando seus dados. Tente novamente em instantes.' };
+
+    // Balance questions
+    if (q.match(/quanto.*(tenho|saldo|total|dinheiro|disponível)/)) {
+      let bankDetail = d.banks.map(b => `<br>• <strong>${b.name}:</strong> ${fmt(b.balance)}`).join('');
+      return {
+        text: `Seu saldo consolidado é de <strong>${fmt(d.totalBalance)}</strong> distribuído em ${d.banks.length} contas:${bankDetail}`,
+        suggestions: ['Qual conta tem menos?', 'Vou conseguir pagar as contas?', 'Como está minha margem?']
+      };
+    }
+
+    // Specific bank
+    for (const b of d.banks) {
+      if (q.includes(b.name.toLowerCase().split(' ')[0].toLowerCase()) || q.includes(b.id)) {
+        return {
+          text: `No <strong>${b.name}</strong> você tem <strong>${fmt(b.balance)}</strong>. ${b.balance < d.totalBalance*0.15 ? '⚠️ Esse saldo está baixo comparado com as outras contas — considere transferir de outra conta se houver vencimentos aqui.' : 'O saldo está em nível saudável.'}`,
+          suggestions: ['Quanto tenho no total?', 'Quais contas vencem essa semana?']
+        };
+      }
+    }
+
+    // Can I pay / enough money
+    if (q.match(/consigo.*(pagar|cobrir)|vou.*(pagar|dar)|tenho.*(pagar|cobrir)|dinheiro.*pagar|pagar.*contas/)) {
+      const sobra = d.totalBalance - d.totalPay;
+      if (sobra > 0) {
+        return {
+          text: `Sim, você consegue. Tem <strong>${fmt(d.totalBalance)}</strong> em caixa e <strong>${fmt(d.totalPay)}</strong> a pagar nos próximos 7 dias. Sobram <strong>${fmt(sobra)}</strong> após todos os pagamentos.${sobra < d.totalBalance * 0.2 ? ' ⚠️ Mas a folga é apertada — fique atento a imprevistos.' : ' ✅ Margem confortável.'}`,
+          suggestions: ['Quais contas vencem essa semana?', 'E o que tenho a receber?', 'Como fica no mês que vem?']
+        };
+      }
+      return {
+        text: `⚠️ <strong>Atenção:</strong> você tem ${fmt(d.totalBalance)} em caixa mas ${fmt(d.totalPay)} a pagar. Faltam <strong>${fmt(Math.abs(sobra))}</strong>. Recomendo: priorize os pagamentos com juros mais altos e negocie prazos com fornecedores.`,
+        suggestions: ['O que posso adiar?', 'Quanto vou receber?', 'Qual conta priorizar?']
+      };
+    }
+
+    // Spending / expenses
+    if (q.match(/gastando|gasto|despesa|saída|saida|onde.*gasto|maior.*gasto/)) {
+      const topExpenses = d.allTx.filter(t => t.type === 'expense').sort((a,b) => b.amount - a.amount).slice(0,3);
+      let detail = topExpenses.map(t => `<br>• <strong>${t.desc}:</strong> ${fmt(t.amount)} (${t.bank})`).join('');
+      return {
+        text: `Suas maiores saídas recentes:${detail}<br><br>Total de saídas no mês: <strong>${fmt(d.totalExpense)}</strong>. Isso representa ${Math.round(d.totalExpense/d.totalIncome*100)}% das suas entradas.`,
+        suggestions: ['Como reduzir gastos?', 'Qual minha margem?', 'Resuma minha semana']
+      };
+    }
+
+    // Income
+    if (q.match(/recebi|entrada|faturamento|receber|recebível|quanto.*entrou/)) {
+      return {
+        text: `Suas entradas no mês somam <strong>${fmt(d.totalIncome)}</strong>. Nos próximos 7 dias, você tem <strong>${fmt(d.totalRec)}</strong> a receber de ${d.allRec.length} fontes. ${d.totalRec > d.totalPay ? '✅ Seus recebíveis cobrem as saídas previstas.' : '⚠️ Os recebíveis não cobrem todas as saídas — pode haver gap de caixa.'}`,
+        suggestions: ['Vou conseguir pagar as contas?', 'Detalhe os recebíveis', 'Resuma minha semana']
+      };
+    }
+
+    // Margin
+    if (q.match(/margem|lucro|sobra|resultado|profit/)) {
+      return {
+        text: `Sua margem de caixa este mês é de <strong>${d.marginPct}%</strong> — ou seja, de cada R$ 100 que entram, sobram R$ ${d.marginPct}. Em valor absoluto: <strong>${fmt(d.margin)}</strong> de sobra.${d.marginPct < 15 ? '<br><br>⚠️ Margem abaixo de 15% é sinal de alerta. Negócios saudáveis costumam operar com 20-30%.' : '<br><br>✅ Margem saudável. Continue assim!'}`,
+        suggestions: ['Onde estou gastando mais?', 'Como melhorar a margem?', 'Quanto tenho no total?']
+      };
+    }
+
+    // Summary
+    if (q.match(/resum|semana|como.*est|situação|visão.*geral|panorama/)) {
+      return {
+        text: `<strong>📊 Resumo financeiro:</strong><br><br>
+        💰 Saldo total: <strong>${fmt(d.totalBalance)}</strong> em ${d.banks.length} contas<br>
+        📥 Entradas (mês): <strong>${fmt(d.totalIncome)}</strong><br>
+        📤 Saídas (mês): <strong>${fmt(d.totalExpense)}</strong><br>
+        📈 Margem: <strong>${d.marginPct}%</strong><br>
+        ${d.urgentCount > 0 ? `⚠️ <strong>${d.urgentCount}</strong> conta(s) vencendo hoje<br>` : ''}
+        ${d.forecastMin < 0 ? `🔴 Previsão de gap de caixa em 18/05 (${fmt(d.forecastMin)})` : '✅ Projeção de caixa saudável para os próximos 30 dias'}`,
+        suggestions: ['Vou conseguir pagar as contas?', 'Onde estou gastando mais?', 'Como melhorar a margem?']
+      };
+    }
+
+    // Lowest bank
+    if (q.match(/menor.*saldo|menos.*dinheiro|conta.*menos|conta.*baixa|pouco/)) {
+      return {
+        text: `A conta com menor saldo é o <strong>${d.lowestBank.name}</strong> com <strong>${fmt(d.lowestBank.balance)}</strong>. ${d.lowestBank.balance < 3000 ? 'Esse valor é preocupante se houver débitos automáticos. Considere transferir de outra conta.' : 'O saldo ainda permite cobrir pequenas despesas.'}`,
+        suggestions: ['Quanto tenho no total?', 'Quais contas vencem essa semana?']
+      };
+    }
+
+    // Due this week
+    if (q.match(/vence|vencimento|essa.*semana|próxim|boleto/)) {
+      let detail = d.allPay.map(p => `<br>• ${p.status==='overdue'?'🔴':'⏰'} <strong>${p.desc}:</strong> ${fmt(p.amount)} — ${p.due} (${p.bank})`).join('');
+      return {
+        text: `Contas a pagar nos próximos 7 dias:${detail}<br><br>Total: <strong>${fmt(d.totalPay)}</strong>`,
+        suggestions: ['Vou conseguir pagar?', 'E o que tenho a receber?', 'Resuma minha semana']
+      };
+    }
+
+    // How to improve / tips
+    if (q.match(/melhorar|reduzir|economizar|dica|conselho|sugest|como.*faço|o que.*posso/)) {
+      return {
+        text: `Com base nos seus dados, aqui vão 3 ações práticas:<br><br>
+        <strong>1. Antecipe recebíveis de cartão.</strong> Você tem ${fmt(d.totalRec)} a receber — antecipando com a operadora, libera caixa imediato (custo de ~2-3% ao mês).<br><br>
+        <strong>2. Negocie prazos com fornecedores.</strong> Tente estender de 30 para 45 dias. Isso melhora seu ciclo financeiro sem custo adicional.<br><br>
+        <strong>3. Redistribua saldos entre contas.</strong> Manter ${fmt(d.highestBank.balance)} no ${d.highestBank.name} enquanto o ${d.lowestBank.name} tem apenas ${fmt(d.lowestBank.balance)} gera risco de descoberto.`,
+        suggestions: ['Resuma minha semana', 'Quanto tenho no total?', 'Qual minha margem?']
+      };
+    }
+
+    // Forecast / next month
+    if (q.match(/previsão|próximo.*mês|futuro|projeção|mês.*que.*vem/)) {
+      return {
+        text: `A projeção para os próximos 30 dias:<br><br>📥 Entradas previstas: <strong>${fmt(Math.round(d.totalIncome*0.7))}</strong><br>📤 Saídas previstas: <strong>${fmt(Math.round(d.totalExpense*0.85))}</strong><br><br>${d.forecastMin < 0 ? `🔴 <strong>Alerta:</strong> o saldo pode ficar negativo (${fmt(d.forecastMin)}) por volta de 18/05. Recomendo antecipar recebíveis ou renegociar o maior fornecedor.` : '✅ A projeção indica que o caixa se mantém positivo. Continue monitorando semanalmente.'}`,
+        suggestions: ['O que posso fazer para melhorar?', 'Resuma minha semana']
+      };
+    }
+
+    // Receivables detail
+    if (q.match(/detalh.*receb|receb.*detalh|quero.*receb|lista.*receb/)) {
+      let detail = d.allRec.map(r => `<br>• ${r.status==='received'?'✅':'⏰'} <strong>${r.desc}:</strong> ${fmt(r.amount)} — ${r.due} (${r.bank})`).join('');
+      return {
+        text: `Seus recebíveis nos próximos dias:${detail}<br><br>Total: <strong>${fmt(d.totalRec)}</strong>`,
+        suggestions: ['Vou conseguir pagar as contas?', 'Resuma minha semana']
+      };
+    }
+
+    // Fallback
+    return {
+      text: `Boa pergunta! Posso te ajudar com informações sobre seu saldo, contas a pagar e receber, margem de caixa, projeções e dicas para melhorar suas finanças. Tente uma dessas:`,
+      suggestions: ['Quanto tenho no total?', 'Resuma minha semana', 'Vou conseguir pagar as contas?', 'Onde estou gastando mais?']
+    };
   }
 </script>
 </body>
